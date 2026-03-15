@@ -1143,7 +1143,7 @@ def compute_weekly_load_breakdown(
     ).fetchall()
 
     # Normalisation des types d'activité pour éviter les doublons d'affichage
-    _TYPE_NORM: dict[str, str] = {
+    type_norm = {
         "Tennis V2": "Tennis", "Tennis v2": "Tennis",
         "Resort Snowboarding": "Snowboarding",
         "Treadmill Running": "Running", "Track Running": "Running",
@@ -1152,7 +1152,7 @@ def compute_weekly_load_breakdown(
     weekly: dict[str, dict] = defaultdict(lambda: {"total_hours": 0.0, "breakdown": {}})
     for row in rows:
         week = row[0]
-        act_type = _TYPE_NORM.get(row[1] or "Autre", row[1] or "Autre")
+        act_type = type_norm.get(row[1] or "Autre", row[1] or "Autre")
         hours = float(row[2] or 0)
         weekly[week]["breakdown"][act_type] = round(
             weekly[week]["breakdown"].get(act_type, 0.0) + hours, 2
