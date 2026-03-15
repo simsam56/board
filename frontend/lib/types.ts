@@ -220,6 +220,16 @@ export interface PredictionHistoryPoint {
   pred_10k_min: number | null;
 }
 
+// ── Calendar ─────────────────────────────────────────────────────
+
+export interface CalendarStatus {
+  ok: boolean;
+  permission: string;
+  calendars_count: number;
+  default_calendar: string | null;
+  error: string | null;
+}
+
 // ── Dashboard (agrégat) ───────────────────────────────────────────
 
 export interface WeekSummary {

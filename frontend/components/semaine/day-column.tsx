@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import { useDroppable } from "@dnd-kit/core";
 import type { PlannerEvent } from "@/lib/types";
 import { EventBlock } from "./event-block";
 import {
@@ -28,6 +29,11 @@ export function DayColumn({
   const height = totalHours * pxPerHour;
   const overlaps = detectOverlaps(events);
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: `day-${day.date}`,
+    data: { date: day.date, startHour, pxPerHour },
+  });
+
   return (
     <div className="flex flex-col">
       {/* Header */}
@@ -44,7 +50,11 @@ export function DayColumn({
       </div>
 
       {/* Time grid */}
-      <div className="relative" style={{ height }}>
+      <div
+        ref={setNodeRef}
+        className={clsx("relative transition-colors", isOver && "bg-accent-blue/10 rounded-lg")}
+        style={{ height }}
+      >
         {/* Hour lines */}
         {Array.from({ length: totalHours }, (_, i) => (
           <div

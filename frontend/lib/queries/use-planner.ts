@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAPI, mutateAPI } from "@/lib/api";
-import type { BoardTask, PlannerEvent } from "@/lib/types";
+import type { BoardTask, CalendarStatus, PlannerEvent } from "@/lib/types";
 
 export function usePlannerEvents(start?: string, end?: string) {
   const params = new URLSearchParams();
@@ -62,6 +62,14 @@ export function useDeleteTask() {
       qc.invalidateQueries({ queryKey: ["board-tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
+  });
+}
+
+export function useCalendarStatus() {
+  return useQuery<CalendarStatus>({
+    queryKey: ["calendar-status"],
+    queryFn: () => fetchAPI("/calendar/status"),
+    staleTime: 30 * 1000,
   });
 }
 

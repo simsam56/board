@@ -1,12 +1,51 @@
 "use client";
 
+import { useState, useCallback } from "react";
+import { DndContext, DragOverlay, type DragEndEvent } from "@dnd-kit/core";
+import { RefreshCw, Lightbulb } from "lucide-react";
 import { useDashboard } from "@/lib/queries/use-dashboard";
-import { CATEGORY_COLORS } from "@/lib/constants";
+import type { BoardTask } from "@/lib/types";
 import { WeekCalendar } from "@/components/semaine/week-calendar";
 import { FadeInSection } from "@/components/health/fade-in-section";
+import { MetricPill } from "@/components/semaine/metric-pill";
+import { IdeasSection } from "@/components/semaine/ideas-section";
+import { SyncWizard } from "@/components/semaine/sync-wizard";
 
 export default function SemainePage() {
   const { data, isLoading, error } = useDashboard();
+  const [syncOpen, setSyncOpen] = useState(false);
+
+  // Drag & drop state
+  const [dropTarget, setDropTarget] = useState<{ date: string; hour: number } | null>(null);
+  const [dropTask, setDropTask] = useState<BoardTask | null>(null);
+  const [dragLabel, setDragLabel] = useState<string | null>(null);
+
+  const handleDragStart = useCallback((event: { active: { data: { current?: { task?: BoardTask } } } }) => {
+    const task = event.active.data.current?.task as BoardTask | undefined;
+    setDragLabel(task?.title ?? null);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setDragLabel(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const task = active.data.current?.task as BoardTask | undefined;
+    if (!task) return;
+
+    const dropData = over.data.current as { date?: string; startHour?: number; pxPerHour?: number } | undefined;
+    if (!dropData?.date) return;
+
+    // Estimate dropped hour from Y position (default to 9h if unavailable)
+    const hour = dropData.startHour ?? 9;
+    setDropTarget({ date: dropData.date, hour });
+    setDropTask(task);
+  }, []);
+
+  const handleDropHandled = useCallback(() => {
+    setDropTarget(null);
+    setDropTask(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -19,118 +58,86 @@ export default function SemainePage() {
   if (error) {
     return (
       <div className="glass rounded-2xl p-6 text-center text-accent-red">
-        Erreur de connexion à l&apos;API Python. Vérifiez que le serveur tourne sur le port 8765.
+        Erreur de connexion a l&apos;API Python. Verifiez que le serveur tourne sur le port 8765.
       </div>
     );
   }
 
   const summary = data?.week?.summary;
   const events = data?.week?.events ?? [];
-  const board = data?.week?.board ?? [];
   const readiness = data?.readiness;
   const weekStart = data?.week?.start ?? new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="space-y-6">
-      {/* Métriques en haut */}
-      <FadeInSection delay={0}>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricPill
-            label="Readiness"
-            value={readiness?.score ?? 0}
-            unit="/100"
-            color={readiness?.color ?? "#64748b"}
-          />
-          <MetricPill
-            label="Sport"
-            value={summary?.sante_h ?? 0}
-            unit="h"
-            color="var(--color-sport)"
-          />
-          <MetricPill
-            label="Travail"
-            value={summary?.travail_h ?? 0}
-            unit="h"
-            color="var(--color-travail)"
-          />
-          <MetricPill
-            label="Social"
-            value={summary?.relationnel_h ?? 0}
-            unit="h"
-            color="var(--color-social)"
-          />
-        </div>
-      </FadeInSection>
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="space-y-6">
+        {/* Metriques + bouton sync */}
+        <FadeInSection delay={0}>
+          <div className="mb-3 flex items-center justify-between">
+            <div />
+            <button
+              onClick={() => setSyncOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-surface-0 px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-surface-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Synchroniser
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <MetricPill
+              label="Readiness"
+              value={readiness?.score ?? 0}
+              unit="/100"
+              color={readiness?.color ?? "#64748b"}
+            />
+            <MetricPill
+              label="Sport"
+              value={summary?.sante_h ?? 0}
+              unit="h"
+              color="var(--color-sport)"
+            />
+            <MetricPill
+              label="Travail"
+              value={summary?.travail_h ?? 0}
+              unit="h"
+              color="var(--color-travail)"
+            />
+            <MetricPill
+              label="Social"
+              value={summary?.relationnel_h ?? 0}
+              unit="h"
+              color="var(--color-social)"
+            />
+          </div>
+        </FadeInSection>
 
-      {/* Planning semaine */}
-      <FadeInSection delay={0.08}>
-        <WeekCalendar events={events} weekStart={weekStart} />
-      </FadeInSection>
+        {/* Planning semaine */}
+        <FadeInSection delay={0.08}>
+          <WeekCalendar events={events} weekStart={weekStart} />
+        </FadeInSection>
 
-      {/* Board (kanban simplifié) */}
-      <FadeInSection delay={0.16}>
-        <div className="glass rounded-2xl p-5">
-          <h2 className="mb-4 text-lg font-semibold">
-            Backlog
-            <span className="ml-2 text-sm font-normal text-text-muted">
-              {board.length} tâches
-            </span>
-          </h2>
-          {board.length === 0 ? (
-            <p className="text-text-muted">Aucune tâche en backlog.</p>
-          ) : (
-            <div className="space-y-2">
-              {board.map((t) => {
-                const color = CATEGORY_COLORS[t.category] ?? CATEGORY_COLORS.autre;
-                return (
-                  <div
-                    key={t.id}
-                    className="flex items-center gap-3 rounded-lg bg-surface-0 px-3 py-2"
-                  >
-                    <span
-                      className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase"
-                      style={{
-                        background: `color-mix(in srgb, ${color} 20%, transparent)`,
-                        color,
-                      }}
-                    >
-                      {t.category}
-                    </span>
-                    <span className="flex-1 text-sm">{t.title}</span>
-                    <span className="text-[10px] uppercase text-text-muted">
-                      {t.triage_status?.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </FadeInSection>
-    </div>
-  );
-}
-
-function MetricPill({
-  label,
-  value,
-  unit,
-  color,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-  color: string;
-}) {
-  return (
-    <div className="glass rounded-xl px-4 py-3">
-      <div className="text-xs font-medium text-text-muted">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className="text-2xl font-bold" style={{ color }}>
-          {typeof value === "number" ? value.toFixed(1) : value}
-        </span>
-        <span className="text-sm text-text-muted">{unit}</span>
+        {/* Idees (remplace le backlog) */}
+        <FadeInSection delay={0.16}>
+          <IdeasSection
+            dropTarget={dropTarget}
+            dropTask={dropTask}
+            onDropHandled={handleDropHandled}
+          />
+        </FadeInSection>
       </div>
-    </div>
+
+      {/* Drag overlay */}
+      <DragOverlay>
+        {dragLabel ? (
+          <div className="flex items-center gap-2 rounded-lg bg-surface-1 px-3 py-2 shadow-lg">
+            <Lightbulb className="h-3.5 w-3.5 text-accent-yellow" />
+            <span className="text-sm">{dragLabel}</span>
+          </div>
+        ) : null}
+      </DragOverlay>
+
+      {/* Sync wizard */}
+      <SyncWizard open={syncOpen} onClose={() => setSyncOpen(false)} />
+    </DndContext>
   );
 }
