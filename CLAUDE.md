@@ -38,8 +38,14 @@ python3 -m pytest -m integration
 # Lint
 ruff check .
 
+# Lint with autofix
+ruff check --fix .
+
 # Type check (strict on analytics/)
 mypy analytics/
+
+# Backend dev (standalone)
+python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8765
 
 # Frontend dev
 cd frontend && npm run dev
@@ -76,12 +82,15 @@ Frontend uses TanStack React Query (v5) for data fetching/caching. Custom hooks 
 - Integration tests (requiring running server) marked with `@pytest.mark.integration`
 - French UI labels (categories: sport, yoga, travail, formation, social, autre)
 - TypeScript types in `frontend/lib/types.ts` mirror backend Pydantic models
+- Ruff: line-length 100, Python 3.11 target
 
 ## Analytics modules
 
 - **training_load.py**: PMC (CTL/ATL/TSB), ACWR zones, readiness score (0-100), running analysis with Riegel predictions, health metric freshness
 - **muscle_groups.py**: Weekly volume targets per muscle, agonist/antagonist ratio alerts, imbalance detection
 - **planner.py**: Task triage (a_determiner → urgent/a_planifier/non_urgent → termine), category mapping with aliases, weekly summaries
+
+**Pitfall**: `compute_pmc()` and `compute_acwr()` take a `daily_tss` dict, NOT a database Connection.
 
 ## Environment variables
 
