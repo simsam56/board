@@ -69,6 +69,12 @@ GARMIN_TYPE_MAP = {
     "wakeboarding": "Wakeboarding",
     "tennis": "Tennis",
     "rowing": "Rowing",
+    "resort_snowboarding": "Snowboarding",
+    "resort_skiing_snowboarding_ws": "Snowboarding",
+    "treadmill_running": "Running",
+    "track_running": "Running",
+    "indoor_running": "Running",
+    "tennis_v2": "Tennis",
     "other": "Other",
 }
 
@@ -581,6 +587,7 @@ def fetch_health_metrics(
     refresh_cutoff = end - timedelta(days=max(0, int(refresh_tail_days) - 1))
 
     existing_dates = set()
+    existing_sleep_dates = set()
     if conn is not None:
         try:
             rows = conn.execute(
@@ -594,6 +601,16 @@ def fetch_health_metrics(
                 (str(start), str(end)),
             ).fetchall()
             existing_dates = {str(r[0]) for r in rows if r and r[0]}
+            sleep_rows = conn.execute(
+                """
+                SELECT DISTINCT date
+                FROM health_metrics
+                WHERE source='garmin_connect' AND metric='sleep_h'
+                  AND date >= ? AND date <= ?
+                """,
+                (str(start), str(end)),
+            ).fetchall()
+            existing_sleep_dates = {str(r[0]) for r in sleep_rows if r and r[0]}
         except Exception:
             existing_dates = set()
 
@@ -604,7 +621,32 @@ def fetch_health_metrics(
 
         # Incrémental: si on a déjà un historique Garmin, on ne refetch pas l'ancien.
         # On conserve seulement une "queue" récente pour capter les mises à jour tardives.
+        # Exception: on tente toujours le sommeil s'il manque pour ce jour.
         if conn is not None and current < refresh_cutoff and existing_dates:
+            if ds not in existing_sleep_dates:
+                # Tenter uniquement le sommeil pour ce jour
+                try:
+                    sleep_data = client.get_sleep_data(ds)
+                    if sleep_data and isinstance(sleep_data, dict):
+                        daily = sleep_data.get("dailySleepDTO", {})
+                        sleep_secs = daily.get("sleepTimeSeconds") or daily.get(
+                            "totalSleepSeconds"
+                        )
+                        if not sleep_secs:
+                            sleep_secs = sleep_data.get("sleepTimeSeconds")
+                        if sleep_secs and sleep_secs > 0:
+                            sleep_h = round(sleep_secs / 3600, 2)
+                            if 2 < sleep_h < 14:
+                                metrics.append(
+                                    {
+                                        "date": ds,
+                                        "metric": "sleep_h",
+                                        "value": sleep_h,
+                                        "source": "garmin_connect",
+                                    }
+                                )
+                except Exception:
+                    pass
             skipped_days += 1
             current += timedelta(days=1)
             continue
@@ -612,24 +654,34 @@ def fetch_health_metrics(
         # ── HRV ─────────────────────────────────────────────────
         try:
             hrv_data = client.get_hrv_data(ds)
-            if hrv_data:
-                # La structure varie selon la version Garmin API
+            if hrv_data and isinstance(hrv_data, dict):
                 hrv_val = None
-                if isinstance(hrv_data, dict):
+                summary = hrv_data.get("hrvSummary") or {}
+                if isinstance(summary, dict):
+                    # lastNightAvg est le SDNN moyen nocturne (préféré)
                     hrv_val = (
-                        hrv_data.get("lastNight", {}).get("avg5MinHrv")
-                        or hrv_data.get("hrvSummary", {}).get("lastNight")
-                        or hrv_data.get("hrv5MinAvg")
+                        summary.get("lastNightAvg")
+                        or summary.get("lastNight")
+                        or summary.get("weeklyAvg")
                     )
-                    if hrv_val and hrv_val > 0:
-                        metrics.append(
-                            {
-                                "date": ds,
-                                "metric": "hrv_sdnn",
-                                "value": float(hrv_val),
-                                "source": "garmin_connect",
-                            }
-                        )
+                if not hrv_val:
+                    # Structures alternatives selon la version API
+                    last_night = hrv_data.get("lastNight")
+                    if isinstance(last_night, dict):
+                        hrv_val = last_night.get("avg5MinHrv")
+                    elif isinstance(last_night, (int, float)):
+                        hrv_val = last_night
+                if not hrv_val:
+                    hrv_val = hrv_data.get("hrv5MinAvg")
+                if hrv_val and float(hrv_val) > 0:
+                    metrics.append(
+                        {
+                            "date": ds,
+                            "metric": "hrv_sdnn",
+                            "value": float(hrv_val),
+                            "source": "garmin_connect",
+                        }
+                    )
         except Exception:
             pass
 
@@ -687,18 +739,19 @@ def fetch_health_metrics(
         try:
             bb_data = client.get_body_battery(ds)
             if bb_data and isinstance(bb_data, list) and bb_data:
-                # Prendre la valeur max de la journée (matin = récupéré)
-                charged_vals = [
-                    r.get("charged")
+                # Extraire le niveau absolu (0-100), pas le delta de recharge
+                level_vals = [
+                    r.get("bodyBatteryLevel") or r.get("charged")
                     for r in bb_data
-                    if r.get("charged") is not None and r.get("charged") > 0
+                    if (r.get("bodyBatteryLevel") or r.get("charged")) is not None
                 ]
-                if charged_vals:
+                level_vals = [v for v in level_vals if v is not None and v > 0]
+                if level_vals:
                     metrics.append(
                         {
                             "date": ds,
                             "metric": "body_battery",
-                            "value": max(charged_vals),
+                            "value": max(level_vals),
                             "source": "garmin_connect",
                         }
                     )
@@ -716,6 +769,36 @@ def fetch_health_metrics(
                             "date": ds,
                             "metric": "stress_avg",
                             "value": float(avg_stress),
+                            "source": "garmin_connect",
+                        }
+                    )
+        except Exception:
+            pass
+
+        # ── VO2max ──────────────────────────────────────────────
+        try:
+            max_data = client.get_max_metrics(ds)
+            if max_data and isinstance(max_data, (dict, list)):
+                vo2_val = None
+                items = max_data if isinstance(max_data, list) else [max_data]
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    generic = item.get("generic") or item
+                    vo2_val = (
+                        generic.get("vo2MaxPreciseValue")
+                        or generic.get("vo2MaxValue")
+                        or item.get("vo2MaxPreciseValue")
+                        or item.get("vo2MaxValue")
+                    )
+                    if vo2_val:
+                        break
+                if vo2_val and float(vo2_val) > 0:
+                    metrics.append(
+                        {
+                            "date": ds,
+                            "metric": "vo2max",
+                            "value": round(float(vo2_val), 2),
                             "source": "garmin_connect",
                         }
                     )

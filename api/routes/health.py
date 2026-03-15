@@ -61,7 +61,10 @@ def health_rings() -> dict:
 
         # Activity ring : basé sur ACWR (0.8-1.3 = 100%)
         acwr_val = acwr.get("acwr", 0)
-        if 0.8 <= acwr_val <= 1.3:
+        acwr_low_data = acwr.get("low_data", False)
+        if acwr_low_data:
+            activity_score = max(30, int(acwr_val / 0.8 * 60))
+        elif 0.8 <= acwr_val <= 1.3:
             activity_score = 100
         elif acwr_val < 0.8:
             activity_score = int(acwr_val / 0.8 * 100)
@@ -91,8 +94,8 @@ def health_rings() -> dict:
                 },
                 "activity": {
                     "score": min(100, max(0, activity_score)),
-                    "label": "Optimal" if 0.8 <= acwr_val <= 1.3 else "Sous-charge" if acwr_val < 0.8 else "Surcharge",
-                    "color": "#30d158" if 0.8 <= acwr_val <= 1.3 else "#ff9f0a" if acwr_val < 0.8 else "#ff3b30",
+                    "label": "Charge insuffisante" if acwr_low_data else "Optimal" if 0.8 <= acwr_val <= 1.3 else "Sous-charge" if acwr_val < 0.8 else "Surcharge",
+                    "color": "#8e8e93" if acwr_low_data else "#30d158" if 0.8 <= acwr_val <= 1.3 else "#ff9f0a" if acwr_val < 0.8 else "#ff3b30",
                 },
                 "sleep": {
                     "score": min(100, max(0, sleep_score)),

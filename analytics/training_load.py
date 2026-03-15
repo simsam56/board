@@ -35,6 +35,7 @@ FRESHNESS_DAYS = {
     "sleep_h": 10,
     "vo2max": 90,
     "weight_kg": 45,
+    "body_battery": 3,
 }
 
 # Multiplicateurs fatigue neuromusculaire (musculation)
@@ -319,6 +320,12 @@ def compute_acwr(
             zone = z
             break
 
+    # Seuil minimum de charge : si CTL < 15, le ratio est peu significatif
+    min_ctl_threshold = 15.0
+    low_data = ewma_chronic < min_ctl_threshold and chronic_roll < min_ctl_threshold
+    if low_data and zone == "optimal":
+        zone = "insuffisant"
+
     return {
         "acwr": round(acwr, 2),
         "acwr_roll": round(acwr_roll, 2),
@@ -329,6 +336,7 @@ def compute_acwr(
         "chronic_ewma": round(ewma_chronic, 1),
         "method": "ewma",
         "zone": zone,
+        "low_data": low_data,
     }
 
 
@@ -454,7 +462,7 @@ def get_health_metrics(
         "body_battery": bb_val,
         "body_battery_date": bb_date,
         "body_battery_days_old": bb_days,
-        "body_battery_freshness": freshness_factor("rhr", bb_days),
+        "body_battery_freshness": freshness_factor("body_battery", bb_days),
     }
 
 

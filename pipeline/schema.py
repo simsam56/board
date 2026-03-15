@@ -173,40 +173,6 @@ def get_connection(db_path: str | Path) -> sqlite3.Connection:
     return conn
 
 
-SOURCE_PRIORITY = {"strava_fit": 1, "garmin_api": 2, "garmin_connect": 2, "apple_health": 3}
-
-
-def deduplicate_activities(db_path: str | Path) -> int:
-    """Remove duplicate activities sharing the same canonical_key.
-
-    Keeps the row from the highest-priority source
-    (strava_fit > garmin > apple_health).
-    Returns the number of rows removed.
-    """
-    conn = sqlite3.connect(str(db_path))
-    dupes = conn.execute(
-        "SELECT canonical_key FROM activities "
-        "GROUP BY canonical_key HAVING COUNT(*) > 1"
-    ).fetchall()
-
-    removed = 0
-    for (key,) in dupes:
-        rows = conn.execute(
-            "SELECT id, source FROM activities WHERE canonical_key = ?", (key,)
-        ).fetchall()
-        # Sort by priority (lower = better), keep first
-        rows.sort(key=lambda r: SOURCE_PRIORITY.get(r[1], 99))
-        ids_to_delete = [r[0] for r in rows[1:]]
-        conn.execute(
-            f"DELETE FROM activities WHERE id IN ({','.join('?' * len(ids_to_delete))})",
-            ids_to_delete,
-        )
-        removed += len(ids_to_delete)
-
-    conn.commit()
-    conn.close()
-    return removed
-
 
 def migrate_db(conn: sqlite3.Connection) -> None:
     """Migration safe: ajoute les nouvelles colonnes triage/scheduling si absentes."""

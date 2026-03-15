@@ -16,6 +16,7 @@ import { ACWRGauge } from "@/components/health/acwr-gauge";
 import { TSBMiniChart } from "@/components/health/tsb-mini-chart";
 import { ActivityJournal } from "@/components/health/activity-journal";
 import { PredictionCard } from "@/components/health/prediction-card";
+import { ReadinessCard } from "@/components/health/readiness-card";
 import { FadeInSection } from "@/components/health/fade-in-section";
 import { SectionSkeleton } from "@/components/health/section-skeleton";
 
@@ -59,8 +60,16 @@ export default function SantePage() {
         </FadeInSection>
       )}
 
-      {/* 2. KPI Pills avec sparklines */}
+      {/* 2. Readiness + Rings */}
       <FadeInSection delay={0.08}>
+        <ReadinessCard
+          readiness={dashboard?.readiness}
+          rings={dashboard?.rings}
+        />
+      </FadeInSection>
+
+      {/* 3. KPI Pills avec sparklines */}
+      <FadeInSection delay={0.16}>
         {trendsLoading ? (
           <SectionSkeleton variant="pills" />
         ) : trends.length > 0 ? (
@@ -72,8 +81,8 @@ export default function SantePage() {
         )}
       </FadeInSection>
 
-      {/* 3. Courbes de tendances détaillées */}
-      <FadeInSection delay={0.16}>
+      {/* 4. Courbes de tendances détaillées */}
+      <FadeInSection delay={0.24}>
         {trends.length > 0 ? (
           <TrendChart
             trends={trends}
@@ -85,8 +94,8 @@ export default function SantePage() {
         )}
       </FadeInSection>
 
-      {/* 4. Charge d'entraînement */}
-      <FadeInSection delay={0.24}>
+      {/* 5. Charge d'entraînement */}
+      <FadeInSection delay={0.32}>
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <TrainingLoadChart data={weeklyLoad} />
@@ -98,8 +107,8 @@ export default function SantePage() {
         </div>
       </FadeInSection>
 
-      {/* 5. Muscle Map */}
-      <FadeInSection delay={0.32}>
+      {/* 6. Muscle Map */}
+      <FadeInSection delay={0.40}>
         <Suspense fallback={<SectionSkeleton variant="map" />}>
           <MuscleMap
             zones={dashboard?.muscles?.zones ?? {}}
@@ -109,8 +118,8 @@ export default function SantePage() {
         </Suspense>
       </FadeInSection>
 
-      {/* 6. Activités & Prédictions course */}
-      <FadeInSection delay={0.40}>
+      {/* 7. Activités & Prédictions course */}
+      <FadeInSection delay={0.48}>
         <div className="grid gap-4 lg:grid-cols-2">
           <ActivityJournal activities={dashboard?.activities?.recent ?? []} />
           <PredictionCard

@@ -76,6 +76,7 @@ export interface ACWRData {
   acute: number;
   chronic: number;
   zone: string;
+  low_data?: boolean;
 }
 
 export interface RunningData {
@@ -245,6 +246,7 @@ export interface DashboardData {
   ok: boolean;
   health: HealthMetrics;
   readiness: ReadinessData;
+  rings: RingsData;
   acwr: ACWRData;
   pmc: PMCData;
   running: RunningData;

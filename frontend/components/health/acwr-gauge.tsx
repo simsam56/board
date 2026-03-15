@@ -23,9 +23,11 @@ export function ACWRGauge({ acwr }: ACWRGaugeProps) {
   const value = Math.min(acwr.acwr, GAUGE_MAX);
   const pct = (value / GAUGE_MAX) * 100;
 
-  const currentZone = ZONES.find(
-    (z) => acwr.acwr >= z.min && acwr.acwr < z.max,
-  ) ?? ZONES[ZONES.length - 1];
+  const currentZone = acwr.low_data
+    ? { label: "Charge insuffisante", min: 0, max: 2, color: "var(--color-text-muted)" }
+    : ZONES.find(
+        (z) => acwr.acwr >= z.min && acwr.acwr < z.max,
+      ) ?? ZONES[ZONES.length - 1];
 
   return (
     <div className="glass rounded-2xl p-4">

@@ -198,10 +198,39 @@ def dashboard_aggregate():
         ]
         hours_series.reverse()
 
+        # Rings (recovery / activity / sleep)
+        acwr_val = acwr.get("acwr", 0)
+        acwr_low_data = acwr.get("low_data", False)
+        if acwr_low_data:
+            activity_ring = max(30, int(acwr_val / 0.8 * 60))
+        elif 0.8 <= acwr_val <= 1.3:
+            activity_ring = 100
+        elif acwr_val < 0.8:
+            activity_ring = int(acwr_val / 0.8 * 100)
+        else:
+            activity_ring = max(0, int(100 - (acwr_val - 1.3) / 0.7 * 100))
+        sleep_h = metrics.get("sleep_h") or 0
+        if 7.5 <= sleep_h <= 9.0:
+            sleep_ring = 100
+        elif sleep_h >= 6.5:
+            sleep_ring = int(60 + 40 * (sleep_h - 6.5))
+        elif sleep_h >= 5.0:
+            sleep_ring = int(20 + 40 * (sleep_h - 5.0) / 1.5)
+        elif sleep_h > 0:
+            sleep_ring = int(sleep_h / 5.0 * 20)
+        else:
+            sleep_ring = 0
+        rings = {
+            "recovery": {"score": readiness["score"], "label": readiness["label"], "color": readiness["color"]},
+            "activity": {"score": min(100, max(0, activity_ring)), "label": "Charge insuffisante" if acwr_low_data else "Optimal" if 0.8 <= acwr_val <= 1.3 else "Sous-charge" if acwr_val < 0.8 else "Surcharge", "color": "#8e8e93" if acwr_low_data else "#30d158" if 0.8 <= acwr_val <= 1.3 else "#ff9f0a" if acwr_val < 0.8 else "#ff3b30"},
+            "sleep": {"score": min(100, max(0, sleep_ring)), "label": f"{sleep_h:.1f}h" if sleep_h else "—", "color": "#30d158" if sleep_ring >= 80 else "#ff9f0a" if sleep_ring >= 50 else "#ff3b30"},
+        }
+
         return {
             "ok": True,
             "health": metrics,
             "readiness": readiness,
+            "rings": rings,
             "acwr": acwr,
             "pmc": {
                 "current": {
