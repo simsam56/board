@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 BASE_URL = f"http://127.0.0.1:{os.environ.get('PERFORMOS_PORT', '8765')}"
 API_BASE = f"{BASE_URL}/api/planner"
 
@@ -158,8 +160,8 @@ def test_db_state():
     conn.close()
 
 
-def _cleanup_task(task_id: int):
-    """Helper: supprimer la tâche de test (called from main(), not pytest)."""
+def cleanup_task(task_id: int):
+    """Helper: supprimer la tâche de test (appelé depuis main())."""
     r = api("DELETE", f"/tasks/{task_id}")
     assert r["status"] == 200, f"Delete failed: {r}"
     print(f"  OK — task #{task_id} deleted")
@@ -201,7 +203,7 @@ def main():
     if task_id:
         print("[CLEANUP] Delete test task")
         try:
-            _cleanup_task(task_id)
+            cleanup_task(task_id)
         except Exception as e:
             print(f"  Cleanup error: {e}")
         print()

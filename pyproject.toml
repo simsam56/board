@@ -56,7 +56,10 @@ line-ending = "auto"
 # ─── Pytest ──────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=analytics --cov=pipeline --cov-report=term-missing -v"
+addopts = "--cov=analytics --cov=pipeline --cov-report=term-missing -v -m 'not integration'"
+markers = [
+    "integration: tests requiring a running server (deselected by default)",
+]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

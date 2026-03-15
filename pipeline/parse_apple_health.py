@@ -369,7 +369,7 @@ def insert_health_metrics(conn: sqlite3.Connection, daily: dict[str, dict]) -> d
 
 
 def run(xml_path: str | Path, db_path: str | Path) -> dict:
-    from pipeline.schema import get_connection
+    from pipeline.schema import init_db
 
     print(f"  Parsing Apple Health XML : {xml_path}")
     xml_path = Path(xml_path)
@@ -377,7 +377,7 @@ def run(xml_path: str | Path, db_path: str | Path) -> dict:
         print(f"  ⚠️  Fichier non trouvé : {xml_path}")
         return {"error": "fichier non trouvé"}
 
-    conn = get_connection(db_path)
+    conn = init_db(db_path)
 
     # 1. Workouts
     print("  → Workouts…", end="", flush=True)
