@@ -290,6 +290,7 @@ tell application "Calendar"
         set minutes of eDate to {int(end_iso[14:16])}
         set seconds of eDate to {int(end_iso[17:19])}
         set newEvent to make new event with properties {{summary:"{escaped_title}", start date:sDate, end date:eDate}}{note_set}{loc_set}
+        make new sound alarm at end of newEvent with properties {{trigger interval:-5}}
         return uid of newEvent
     end tell
 end tell
@@ -575,6 +576,15 @@ def create_apple_calendar_event(
             )
         return {"enabled": False, "error": "no_writable_calendar"}
     event.setCalendar_(calendar)
+
+    # Add a 5-minute alarm so the user gets a notification on their devices
+    try:
+        from EventKit import EKAlarm  # type: ignore
+
+        alarm = EKAlarm.alarmWithRelativeOffset_(-5 * 60)  # -300 seconds = 5 min before
+        event.addAlarm_(alarm)
+    except Exception:
+        pass  # Non-critical: event still gets created without alarm
 
     try:
         ok, save_err = store.saveEvent_span_commit_error_(event, EKSpanThisEvent, True, None)

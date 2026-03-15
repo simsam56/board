@@ -46,26 +46,12 @@ export function groupEventsByDay(
   return map;
 }
 
-export function computeTimeRange(events: PlannerEvent[]): {
+export function computeTimeRange(_events: PlannerEvent[]): {
   startHour: number;
   endHour: number;
 } {
-  if (events.length === 0) return { startHour: 7, endHour: 22 };
-
-  let minH = 23;
-  let maxH = 0;
-  for (const ev of events) {
-    const sh = new Date(ev.start_at).getHours();
-    const eh = new Date(ev.end_at).getHours();
-    const em = new Date(ev.end_at).getMinutes();
-    if (sh < minH) minH = sh;
-    if (eh + (em > 0 ? 1 : 0) > maxH) maxH = eh + (em > 0 ? 1 : 0);
-  }
-
-  return {
-    startHour: Math.max(6, minH - 1),
-    endHour: Math.min(23, Math.max(maxH + 1, minH + 4)),
-  };
+  // Fixed range so the calendar keeps the same size across all weeks
+  return { startHour: 8, endHour: 20 };
 }
 
 export function getEventPosition(

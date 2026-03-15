@@ -3,6 +3,7 @@
 import { CalendarPlus, GripVertical, Lightbulb } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import type { BoardTask } from "@/lib/types";
+import { CATEGORY_COLORS } from "@/lib/constants";
 
 interface IdeaRowProps {
   task: BoardTask;
@@ -36,7 +37,15 @@ export function IdeaRow({ task, onSchedule }: IdeaRowProps) {
       >
         <GripVertical className="h-3.5 w-3.5" />
       </button>
-      <Lightbulb className="h-3.5 w-3.5 shrink-0 text-accent-yellow" />
+      <span
+        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase"
+        style={{
+          background: `color-mix(in srgb, ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.autre} 20%, transparent)`,
+          color: CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.autre,
+        }}
+      >
+        {task.category}
+      </span>
       <span className="flex-1 truncate text-sm">{task.title}</span>
       <span className="shrink-0 text-[10px] text-text-muted">
         {new Date(task.created_at).toLocaleDateString("fr-FR", {

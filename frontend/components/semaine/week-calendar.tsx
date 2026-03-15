@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PlannerEvent } from "@/lib/types";
 import { DayColumn } from "./day-column";
 import {
@@ -13,9 +14,24 @@ import {
 interface WeekCalendarProps {
   events: PlannerEvent[];
   weekStart: string;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onToday?: () => void;
+  isCurrentWeek?: boolean;
+  onEditEvent?: (event: PlannerEvent) => void;
+  onDeleteEvent?: (event: PlannerEvent) => void;
 }
 
-export function WeekCalendar({ events, weekStart }: WeekCalendarProps) {
+export function WeekCalendar({
+  events,
+  weekStart,
+  onPrev,
+  onNext,
+  onToday,
+  isCurrentWeek = true,
+  onEditEvent,
+  onDeleteEvent,
+}: WeekCalendarProps) {
   const days = getWeekDays(weekStart);
   const eventsByDay = groupEventsByDay(events, weekStart);
   const { startHour, endHour } = computeTimeRange(events);
@@ -40,8 +56,50 @@ export function WeekCalendar({ events, weekStart }: WeekCalendarProps) {
 
   const hours = Array.from({ length: totalHours }, (_, i) => startHour + i);
 
+  // Week label: "10 – 16 mars 2026"
+  const firstDay = days[0];
+  const lastDay = days[6];
+  const fmt = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  };
+  const yearStr = new Date(firstDay.date + "T00:00:00").getFullYear();
+  const weekLabel = `${fmt(firstDay.date)} – ${fmt(lastDay.date)} ${yearStr}`;
+
   return (
     <div className="glass rounded-2xl p-4">
+      {/* Navigation */}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onPrev}
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-1 hover:text-text-primary"
+            aria-label="Semaine precedente"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onNext}
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-1 hover:text-text-primary"
+            aria-label="Semaine suivante"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <span className="text-sm font-medium text-text-secondary">{weekLabel}</span>
+
+        {!isCurrentWeek && (
+          <button
+            onClick={onToday}
+            className="rounded-lg px-2.5 py-1 text-[11px] font-medium text-accent-blue transition-colors hover:bg-accent-blue/10"
+          >
+            Aujourd&apos;hui
+          </button>
+        )}
+        {isCurrentWeek && <div />}
+      </div>
+
       <div className="overflow-x-auto md:overflow-visible">
         <div className="grid min-w-[700px] grid-cols-[3rem_repeat(7,1fr)] gap-1 md:min-w-0">
           {/* Header spacer for time gutter */}
@@ -75,11 +133,13 @@ export function WeekCalendar({ events, weekStart }: WeekCalendarProps) {
               startHour={startHour}
               endHour={endHour}
               pxPerHour={pxPerHour}
+              onEditEvent={onEditEvent}
+              onDeleteEvent={onDeleteEvent}
             />
           ))}
 
-          {/* Current time line */}
-          {nowPercent !== null && (
+          {/* Current time line (only on current week) */}
+          {isCurrentWeek && nowPercent !== null && (
             <div
               className="pointer-events-none absolute left-[3rem] right-0 z-10 border-t-2 border-accent-red/70"
               style={{ top: `${nowPercent}%` }}

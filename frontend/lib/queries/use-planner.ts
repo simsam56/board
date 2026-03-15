@@ -65,6 +65,30 @@ export function useDeleteTask() {
   });
 }
 
+export function useUpdateAppleEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uid, ...body }: { uid: string } & Record<string, unknown>) =>
+      mutateAPI(`/planner/apple/${encodeURIComponent(uid)}`, "PATCH", body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["planner-events"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useDeleteAppleEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (uid: string) =>
+      mutateAPI(`/planner/apple/${encodeURIComponent(uid)}`, "DELETE"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["planner-events"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
 export function useCalendarStatus() {
   return useQuery<CalendarStatus>({
     queryKey: ["calendar-status"],

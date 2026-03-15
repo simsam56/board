@@ -16,6 +16,8 @@ interface DayColumnProps {
   startHour: number;
   endHour: number;
   pxPerHour: number;
+  onEditEvent?: (event: PlannerEvent) => void;
+  onDeleteEvent?: (event: PlannerEvent) => void;
 }
 
 export function DayColumn({
@@ -24,6 +26,8 @@ export function DayColumn({
   startHour,
   endHour,
   pxPerHour,
+  onEditEvent,
+  onDeleteEvent,
 }: DayColumnProps) {
   const totalHours = endHour - startHour;
   const height = totalHours * pxPerHour;
@@ -52,7 +56,7 @@ export function DayColumn({
       {/* Time grid */}
       <div
         ref={setNodeRef}
-        className={clsx("relative transition-colors", isOver && "bg-accent-blue/10 rounded-lg")}
+        className={clsx("relative transition-colors", isOver && "rounded-lg bg-accent-blue/10")}
         style={{ height }}
       >
         {/* Hour lines */}
@@ -79,6 +83,8 @@ export function DayColumn({
               heightPercent={pos.heightPercent}
               column={overlap.column}
               totalColumns={overlap.totalColumns}
+              onEdit={onEditEvent}
+              onDelete={onDeleteEvent}
             />
           );
         })}

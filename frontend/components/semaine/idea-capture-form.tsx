@@ -3,10 +3,20 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
-const IDEA_CATEGORIES = ["Pro", "Perso", "Projet", "A creuser"] as const;
+const IDEA_CATEGORIES = ["Pro", "Perso", "Sport", "Yoga", "Projet", "A creuser"] as const;
+
+/** Maps display category to backend Category value */
+const CATEGORY_MAP: Record<string, string> = {
+  Pro: "travail",
+  Perso: "autre",
+  Sport: "sport",
+  Yoga: "yoga",
+  Projet: "formation",
+  "A creuser": "autre",
+};
 
 interface IdeaCaptureFormProps {
-  onSubmit: (title: string, category: string) => void;
+  onSubmit: (title: string, displayCategory: string, backendCategory: string) => void;
   isPending: boolean;
 }
 
@@ -16,7 +26,7 @@ export function IdeaCaptureForm({ onSubmit, isPending }: IdeaCaptureFormProps) {
 
   const handleSubmit = () => {
     if (!text.trim()) return;
-    onSubmit(text.trim(), category);
+    onSubmit(text.trim(), category, CATEGORY_MAP[category] ?? "autre");
     setText("");
   };
 
