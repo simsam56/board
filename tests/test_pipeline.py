@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from pipeline.parse_apple_health import run as parse_apple_health
+from pipeline.schema import init_db
 
 
 def test_parse_apple_health_basic():
@@ -34,6 +35,10 @@ def test_parse_apple_health_basic():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as db_f:
             db_path = Path(db_f.name)
 
+        # Initialize schema so all tables exist
+        conn = init_db(db_path)
+        conn.close()
+
         # Run parsing
         result = parse_apple_health(xml_path=xml_path, db_path=db_path)
 
@@ -43,12 +48,13 @@ def test_parse_apple_health_basic():
 
         # Check database
         conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
         workouts = conn.execute("SELECT * FROM activities WHERE source='apple_health'").fetchall()
         assert len(workouts) >= 1
 
         workout = workouts[0]
-        assert workout[2] == "apple_health"  # source
-        assert "Running" in workout[3]  # type
+        assert workout["source"] == "apple_health"
+        assert "Running" in workout["type"]
 
         conn.close()
 
@@ -70,6 +76,10 @@ def test_parse_apple_health_empty():
     try:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as db_f:
             db_path = Path(db_f.name)
+
+        # Initialize schema so all tables exist
+        conn = init_db(db_path)
+        conn.close()
 
         result = parse_apple_health(xml_path=xml_path, db_path=db_path)
         assert result["workouts_inserted"] == 0

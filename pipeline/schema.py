@@ -213,3 +213,41 @@ def migrate_db(conn: sqlite3.Connection) -> None:
             (new_cat, old_cat),
         )
     conn.commit()
+
+
+# Source priority: higher index = preferred when deduplicating
+_SOURCE_PRIORITY = ["apple_health", "garmin_connect", "strava_fit"]
+
+
+def deduplicate_activities(db_path: str | Path) -> int:
+    """Remove duplicate activities based on canonical_key, keeping the best source.
+
+    Returns the number of removed duplicates.
+    """
+    conn = sqlite3.connect(str(db_path))
+    # Find canonical_keys with duplicates
+    dupes = conn.execute(
+        "SELECT canonical_key, COUNT(*) AS cnt "
+        "FROM activities WHERE canonical_key IS NOT NULL "
+        "GROUP BY canonical_key HAVING cnt > 1"
+    ).fetchall()
+
+    removed = 0
+    for (ck, _cnt) in dupes:
+        rows = conn.execute(
+            "SELECT id, source FROM activities WHERE canonical_key = ?", (ck,)
+        ).fetchall()
+        # Sort by source priority (best first)
+        rows.sort(
+            key=lambda r: _SOURCE_PRIORITY.index(r[1]) if r[1] in _SOURCE_PRIORITY else -1,
+            reverse=True,
+        )
+        # Keep the first (best source), delete the rest
+        ids_to_delete = [r[0] for r in rows[1:]]
+        for aid in ids_to_delete:
+            conn.execute("DELETE FROM activities WHERE id = ?", (aid,))
+            removed += 1
+
+    conn.commit()
+    conn.close()
+    return removed

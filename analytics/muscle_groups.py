@@ -318,8 +318,8 @@ def analyze_imbalances(
     # ── 1. Alertes volume absolu ──────────────────────────────────
     for mg, targets in VOLUME_TARGETS.items():
         spw = volume.get(mg, {}).get("sets_per_week", 0)
-        min_sets = int(targets["min"])  # type: ignore[arg-type]
-        hyp_sets = int(targets["hyper"])  # type: ignore[arg-type]
+        min_sets = int(targets["min"])  # type: ignore[call-overload]
+        hyp_sets = int(targets["hyper"])  # type: ignore[call-overload]
         icon = targets["icon"]
 
         if spw == 0:

@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends
 
 from analytics import planner
-from api.deps import DB_PATH, invalidate_cache, require_auth
+from api.deps import DB_PATH, require_auth
 from integrations.apple_calendar import (
     diagnose_apple_calendar,
     sync_apple_calendar,
@@ -224,7 +223,6 @@ def create_tasks_batch(
     if default_sync_apple:
         background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
-    status = 201 if res.get("ok") else 207
     return {"ok": bool(res.get("ok")), "result": res, "events": events}
 
 

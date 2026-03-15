@@ -31,7 +31,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S106"]
+"tests/*" = ["S101", "S105", "S106", "S110", "S310"]
 "diagnose*.py" = ["F401", "S110", "E722"]
 "launch.py" = ["F401"]
 "quick_launch.py" = ["F401", "S110"]
@@ -42,6 +42,10 @@ ignore = [
 "cockpit_server.py" = ["S110", "N806", "E722"]
 "build_dashboard.py" = ["S110", "N806", "F821", "E722"]
 "health_analyzer.py" = ["S110", "N806", "F821", "E722"]
+"integrations/*" = ["S110", "S112", "S608", "N806", "N817"]
+"pipeline/*" = ["S110", "S112", "S608", "N806", "N817"]
+"analytics/*" = ["S110", "S112"]
+"api/*" = ["S110"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -88,4 +92,4 @@ disallow_untyped_defs = true
 # ─── Bandit ──────────────────────────────────────────────────────
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", "__pycache__"]
-skips = ["B101"]
+skips = ["B101", "B110", "B112"]

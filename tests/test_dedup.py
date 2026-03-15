@@ -6,7 +6,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from main import deduplicate_activities
+from pipeline.schema import deduplicate_activities
 
 
 def test_deduplicate_activities():
@@ -24,7 +24,7 @@ def test_deduplicate_activities():
                 type TEXT,
                 started_at TEXT,
                 duration_s INTEGER,
-                canonical_key TEXT UNIQUE
+                canonical_key TEXT
             )
         """)
 
