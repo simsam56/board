@@ -14,16 +14,17 @@ import {
 } from "recharts";
 import { PeriodSelector } from "./period-selector";
 import type { WeeklyTrend } from "@/lib/types";
+import { formatWeekLabel } from "@/lib/format";
 
 const METRIC_COLORS: Record<string, string> = {
   rhr: "var(--color-accent-red)",
   hrv_sdnn: "var(--color-accent-green)",
   sleep_h: "var(--color-accent-purple)",
   vo2max: "var(--color-accent-blue)",
-  weight_kg: "var(--color-accent-yellow)",
 };
 
 const LEFT_AXIS_METRICS = new Set(["rhr", "hrv_sdnn"]);
+const HIDDEN_METRICS = new Set(["weight_kg"]);
 
 interface TrendChartProps {
   trends: WeeklyTrend[];
@@ -51,7 +52,7 @@ export function TrendChart({ trends, weeks, onWeeksChange }: TrendChartProps) {
     const weeks = [...allWeeks].sort();
     return weeks.map((w) => {
       const point: Record<string, string | number | null> = {
-        week: w.replace(/^\d{4}-W/, "S"),
+        week: formatWeekLabel(w),
       };
       for (const t of trends) {
         const p = t.series.find((s) => s.week === w);
@@ -80,7 +81,7 @@ export function TrendChart({ trends, weeks, onWeeksChange }: TrendChartProps) {
         <PeriodSelector value={weeks} onChange={onWeeksChange} />
       </div>
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {trends.map((t) => (
+        {trends.filter((t) => !HIDDEN_METRICS.has(t.metric)).map((t) => (
           <button
             key={t.metric}
             onClick={() => toggle(t.metric)}
@@ -136,7 +137,7 @@ export function TrendChart({ trends, weeks, onWeeksChange }: TrendChartProps) {
               }}
               labelStyle={{ color: "var(--color-text-muted)" }}
             />
-            {trends.map(
+            {trends.filter((t) => !HIDDEN_METRICS.has(t.metric)).map(
               (t) =>
                 active.has(t.metric) && (
                   <Line

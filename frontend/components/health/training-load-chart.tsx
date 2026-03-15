@@ -12,6 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { WeeklyLoadBreakdown } from "@/lib/types";
+import { formatWeekLabel } from "@/lib/format";
 
 const SPORT_COLORS: Record<string, string> = {
   Running: "var(--color-sport)",
@@ -35,7 +36,7 @@ export function TrainingLoadChart({ data }: TrainingLoadChartProps) {
       for (const t of Object.keys(w.breakdown)) types.add(t);
     }
     const chartData = data.map((w) => ({
-      week: w.week.replace(/^\d{4}-W/, "S"),
+      week: formatWeekLabel(w.week),
       ...w.breakdown,
     }));
     return { chartData, sportTypes: [...types] };

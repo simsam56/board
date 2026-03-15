@@ -32,7 +32,7 @@ export function ACWRGauge({ acwr }: ACWRGaugeProps) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-text-primary">ACWR</h4>
+        <h4 className="text-sm font-semibold text-text-primary">Charge récente / habituelle</h4>
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-text-primary">
             {acwr.acwr.toFixed(2)}

@@ -919,11 +919,10 @@ METRIC_META: list[dict[str, str]] = [
     {"metric": "hrv_sdnn", "db_metric": "hrv_sdnn", "label": "HRV", "unit": "ms"},
     {"metric": "sleep_h", "db_metric": "sleep_h", "label": "Sommeil", "unit": "h"},
     {"metric": "vo2max", "db_metric": "vo2max", "label": "VO2max", "unit": ""},
-    {"metric": "weight_kg", "db_metric": "weight_kg", "label": "Poids", "unit": "kg"},
 ]
 
 # Metrics where "down" is favorable
-_DOWN_IS_GOOD = {"rhr", "weight_kg"}
+_DOWN_IS_GOOD = {"rhr"}
 
 
 def compute_weekly_trends(
@@ -942,11 +941,12 @@ def compute_weekly_trends(
     for meta in METRIC_META:
         rows = conn.execute(
             """
-            SELECT strftime('%Y-W%W', date) AS week, ROUND(AVG(value), 2) AS avg_val
+            SELECT date(date, 'weekday 0', '-6 days') AS week_monday,
+                   ROUND(AVG(value), 2) AS avg_val
             FROM health_metrics
             WHERE metric = ? AND date >= ? AND date <= ?
-            GROUP BY week
-            ORDER BY week
+            GROUP BY week_monday
+            ORDER BY week_monday
             """,
             (meta["db_metric"], str(start_date), str(end_date)),
         ).fetchall()
@@ -1131,23 +1131,32 @@ def compute_weekly_load_breakdown(
     rows = conn.execute(
         """
         SELECT
-            strftime('%Y-W%W', started_at) AS week,
+            date(started_at, 'weekday 0', '-6 days') AS week_monday,
             type,
             ROUND(SUM(COALESCE(duration_s, 0)) / 3600.0, 2) AS hours
         FROM activities
         WHERE started_at IS NOT NULL AND date(started_at) >= ? AND date(started_at) <= ?
-        GROUP BY week, type
-        ORDER BY week
+        GROUP BY week_monday, type
+        ORDER BY week_monday
         """,
         (str(start_date), str(end_date)),
     ).fetchall()
 
+    # Normalisation des types d'activité pour éviter les doublons d'affichage
+    _TYPE_NORM: dict[str, str] = {
+        "Tennis V2": "Tennis", "Tennis v2": "Tennis",
+        "Resort Snowboarding": "Snowboarding",
+        "Treadmill Running": "Running", "Track Running": "Running",
+        "Cross_country_skiing": "Cross Country Skiing",
+    }
     weekly: dict[str, dict] = defaultdict(lambda: {"total_hours": 0.0, "breakdown": {}})
     for row in rows:
         week = row[0]
-        act_type = row[1] or "Autre"
+        act_type = _TYPE_NORM.get(row[1] or "Autre", row[1] or "Autre")
         hours = float(row[2] or 0)
-        weekly[week]["breakdown"][act_type] = hours
+        weekly[week]["breakdown"][act_type] = round(
+            weekly[week]["breakdown"].get(act_type, 0.0) + hours, 2
+        )
         weekly[week]["total_hours"] = round(weekly[week]["total_hours"] + hours, 2)
 
     return [

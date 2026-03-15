@@ -7,7 +7,7 @@ interface TrendPillRowProps {
   trends: WeeklyTrend[];
 }
 
-const METRIC_ORDER = ["rhr", "hrv_sdnn", "sleep_h", "vo2max", "weight_kg"];
+const METRIC_ORDER = ["rhr", "hrv_sdnn", "sleep_h", "vo2max"];
 
 export function TrendPillRow({ trends }: TrendPillRowProps) {
   const sorted = METRIC_ORDER
@@ -15,7 +15,7 @@ export function TrendPillRow({ trends }: TrendPillRowProps) {
     .filter(Boolean) as WeeklyTrend[];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {sorted.map((t) => (
         <TrendPill key={t.metric} trend={t} />
       ))}

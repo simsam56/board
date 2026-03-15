@@ -60,15 +60,20 @@ export default function SantePage() {
         </FadeInSection>
       )}
 
-      {/* 2. Readiness + Rings */}
+      {/* 2. Charge d'entraînement (priorité) */}
       <FadeInSection delay={0.08}>
-        <ReadinessCard
-          readiness={dashboard?.readiness}
-          rings={dashboard?.rings}
-        />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <TrainingLoadChart data={weeklyLoad} />
+          </div>
+          <div className="space-y-4">
+            <ACWRGauge acwr={dashboard?.acwr} />
+            <TSBMiniChart series={dashboard?.pmc?.series ?? []} />
+          </div>
+        </div>
       </FadeInSection>
 
-      {/* 3. KPI Pills avec sparklines */}
+      {/* 3. KPI Pills */}
       <FadeInSection delay={0.16}>
         {trendsLoading ? (
           <SectionSkeleton variant="pills" />
@@ -94,21 +99,8 @@ export default function SantePage() {
         )}
       </FadeInSection>
 
-      {/* 5. Charge d'entraînement */}
+      {/* 5. Muscle Map */}
       <FadeInSection delay={0.32}>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <TrainingLoadChart data={weeklyLoad} />
-          </div>
-          <div className="space-y-4">
-            <ACWRGauge acwr={dashboard?.acwr} />
-            <TSBMiniChart series={dashboard?.pmc?.series ?? []} />
-          </div>
-        </div>
-      </FadeInSection>
-
-      {/* 6. Muscle Map */}
-      <FadeInSection delay={0.40}>
         <Suspense fallback={<SectionSkeleton variant="map" />}>
           <MuscleMap
             zones={dashboard?.muscles?.zones ?? {}}
@@ -118,8 +110,8 @@ export default function SantePage() {
         </Suspense>
       </FadeInSection>
 
-      {/* 7. Activités & Prédictions course */}
-      <FadeInSection delay={0.48}>
+      {/* 6. Activités & Prédictions course */}
+      <FadeInSection delay={0.40}>
         <div className="grid gap-4 lg:grid-cols-2">
           <ActivityJournal activities={dashboard?.activities?.recent ?? []} />
           <PredictionCard
@@ -127,6 +119,14 @@ export default function SantePage() {
             predictionHistory={predHistory}
           />
         </div>
+      </FadeInSection>
+
+      {/* 7. Readiness + Confiance (en bas) */}
+      <FadeInSection delay={0.48}>
+        <ReadinessCard
+          readiness={dashboard?.readiness}
+          rings={dashboard?.rings}
+        />
       </FadeInSection>
     </div>
   );
