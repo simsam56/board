@@ -1058,8 +1058,6 @@ def generate_highlights(
 
     # 4. Running volume trend
     if running_data and running_data.get("km_per_week", 0) > 0:
-        km_week = running_data["km_per_week"]
-        total_km = running_data.get("total_km", 0)
         sessions = running_data.get("sessions", 0)
         if sessions >= 3:
             # Compare recent 2 weeks vs previous 2 weeks

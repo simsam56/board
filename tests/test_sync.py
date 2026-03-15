@@ -16,6 +16,8 @@ import sys
 import urllib.request
 from pathlib import Path
 
+import pytest
+
 BASE_URL = f"http://127.0.0.1:{os.environ.get('PERFORMOS_PORT', '8765')}"
 API_BASE = f"{BASE_URL}/api/planner"
 
@@ -35,6 +37,23 @@ if not TOKEN:
     TOKEN = "performos"
 
 
+def _server_reachable() -> bool:
+    """Check if the API server is running."""
+    try:
+        req = urllib.request.Request(f"{API_BASE}/health", method="GET")
+        req.add_header("X-PerformOS-Token", TOKEN)
+        urllib.request.urlopen(req, timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+requires_server = pytest.mark.skipif(
+    not _server_reachable(),
+    reason="API server not running (integration test)"
+)
+
+
 def api(method: str, path: str, body: dict | None = None) -> dict:
     url = f"{API_BASE}{path}"
     data = json.dumps(body or {}).encode() if body is not None else b"{}"
@@ -50,6 +69,7 @@ def api(method: str, path: str, body: dict | None = None) -> dict:
         return {"status": 0, "body": {"error": str(e)}}
 
 
+@requires_server
 def test_server_alive():
     """Test 0: le serveur répond."""
     r = api("GET", "/events?start=2026-01-01&end=2026-12-31")
@@ -58,6 +78,7 @@ def test_server_alive():
     print(f"  OK — {len(r['body'].get('events', []))} events")
 
 
+@requires_server
 def test_create_task():
     """Test 1: créer une tâche via POST /tasks."""
     payload = {
@@ -77,6 +98,7 @@ def test_create_task():
     return task_id
 
 
+@requires_server
 def test_push_to_apple():
     """Test 2: push local → Apple Calendar."""
     r = api("POST", "/calendar/push")
@@ -93,6 +115,7 @@ def test_push_to_apple():
     return body
 
 
+@requires_server
 def test_pull_from_apple():
     """Test 3: pull Apple Calendar → SQLite."""
     r = api("POST", "/calendar/sync")
@@ -105,6 +128,7 @@ def test_pull_from_apple():
     return body
 
 
+@requires_server
 def test_db_state():
     """Test 4: vérifier l'état de la DB."""
     db = Path("athlete.db")
@@ -134,8 +158,8 @@ def test_db_state():
     conn.close()
 
 
-def test_cleanup(task_id: int):
-    """Test 5: supprimer la tâche de test."""
+def _cleanup_task(task_id: int):
+    """Helper: supprimer la tâche de test (called from main(), not pytest)."""
     r = api("DELETE", f"/tasks/{task_id}")
     assert r["status"] == 200, f"Delete failed: {r}"
     print(f"  OK — task #{task_id} deleted")
@@ -177,7 +201,7 @@ def main():
     if task_id:
         print("[CLEANUP] Delete test task")
         try:
-            test_cleanup(task_id)
+            _cleanup_task(task_id)
         except Exception as e:
             print(f"  Cleanup error: {e}")
         print()

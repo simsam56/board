@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from analytics.muscle_groups import analyze_imbalances, get_cumulative_volume
 from analytics.training_load import (
+    analyze_running,
     build_daily_tss,
     compute_acwr,
     compute_pmc,
@@ -13,7 +14,6 @@ from analytics.training_load import (
     compute_weekly_trends,
     generate_highlights,
     get_health_metrics,
-    analyze_running,
 )
 from api.deps import get_db
 
@@ -38,7 +38,7 @@ def health_rings() -> dict:
     try:
         metrics = get_health_metrics(conn)
         daily_tss = build_daily_tss(conn)
-        pmc = compute_pmc(daily_tss)
+        compute_pmc(daily_tss)
         acwr = compute_acwr(daily_tss)
 
         # Recovery ring : basé sur le readiness score
