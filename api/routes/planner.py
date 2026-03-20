@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends
 
 from analytics import planner
-from api.deps import DB_PATH, require_auth
+from api.deps import DB_PATH, invalidate_cache, require_auth
 from integrations.apple_calendar import (
     create_apple_calendar_event,
     diagnose_apple_calendar,
@@ -197,6 +197,7 @@ def create_task(
         scheduled_end=str(end_at) if end_at else None,
         last_bucket_before_scheduling=last_bucket,
     )
+    invalidate_cache()
     if sync_apple:
         background_tasks.add_task(_sync_calendar_soft)
 
@@ -226,6 +227,7 @@ def create_tasks_batch(
         default_sync_apple=default_sync_apple,
         default_calendar_name=default_calendar_name,
     )
+    invalidate_cache()
     if default_sync_apple:
         background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
@@ -317,6 +319,7 @@ def update_task(
     )
     if not res.get("ok"):
         return {"ok": False, "error": res.get("error", "task_not_found")}
+    invalidate_cache()
     if sync_apple:
         background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
@@ -342,7 +345,9 @@ def update_apple_event(
         start_at=str(body.get("start_at") or ""),
         end_at=str(body.get("end_at") or ""),
         notes=body.get("notes"),
+        db_path=DB_PATH,
     )
+    invalidate_cache()
     background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
     return {"ok": bool(res.get("enabled")), "result": res, "events": events}
@@ -358,6 +363,7 @@ def delete_task(
     _: None = Depends(require_auth),
 ) -> dict:
     res = planner.delete_task(DB_PATH, task_id=task_id, sync_apple=True)
+    invalidate_cache()
     background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
     board = planner.get_board_tasks_db(DB_PATH)
@@ -371,6 +377,7 @@ def delete_apple_event(
     _: None = Depends(require_auth),
 ) -> dict:
     res = planner.delete_apple_only_event(uid, db_path=DB_PATH)
+    invalidate_cache()
     background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
     return {"ok": bool(res.get("enabled")), "result": res, "events": events}

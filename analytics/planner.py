@@ -599,6 +599,14 @@ def update_task(
             int(task_id),
         ),
     )
+    # Synchroniser calendar_events pour que le dashboard reflète immédiatement le changement
+    if calendar_uid and new_start:
+        cur.execute(
+            """UPDATE calendar_events
+               SET title=?, start_at=?, end_at=?, notes=?, updated_at=datetime('now')
+               WHERE event_uid=?""",
+            (new_title, new_start, new_end, new_notes, calendar_uid),
+        )
     conn.commit()
     conn.close()
     return {
@@ -657,18 +665,33 @@ def update_apple_only_event(
     start_at: str,
     end_at: str,
     notes: str | None = None,
+    db_path: str | Path | None = None,
 ) -> dict:
     """Met à jour un événement Apple non géré par planner_tasks."""
     try:
         from integrations.apple_calendar import update_apple_calendar_event
 
-        return update_apple_calendar_event(
+        res = update_apple_calendar_event(
             event_uid=event_uid,
             title=title,
             start_at=start_at,
             end_at=end_at,
             notes=notes,
         )
+        # Mise à jour immédiate dans la table calendar_events
+        # pour que le dashboard reflète le changement sans attendre la sync
+        if db_path and res.get("enabled"):
+            conn = connect_db(db_path)
+            conn.execute(
+                """UPDATE calendar_events
+                   SET title=?, start_at=?, end_at=?, notes=?,
+                       updated_at=datetime('now')
+                   WHERE event_uid=?""",
+                (title, start_at, end_at, notes, event_uid),
+            )
+            conn.commit()
+            conn.close()
+        return res
     except Exception as e:
         return {"enabled": False, "error": str(e)}
 
