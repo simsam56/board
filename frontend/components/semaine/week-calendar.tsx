@@ -19,6 +19,7 @@ interface WeekCalendarProps {
   isCurrentWeek?: boolean;
   onEditEvent?: (event: PlannerEvent) => void;
   onDeleteEvent?: (event: PlannerEvent) => void;
+  onCreateEvent?: (date: string, hour: number) => void;
 }
 
 export function WeekCalendar({
@@ -30,6 +31,7 @@ export function WeekCalendar({
   isCurrentWeek = true,
   onEditEvent,
   onDeleteEvent,
+  onCreateEvent,
 }: WeekCalendarProps) {
   const days = getWeekDays(weekStart);
   const eventsByDay = groupEventsByDay(events, weekStart);
@@ -119,6 +121,7 @@ export function WeekCalendar({
               pxPerHour={pxPerHour}
               onEditEvent={onEditEvent}
               onDeleteEvent={onDeleteEvent}
+              onCreateEvent={onCreateEvent}
             />
           ))}
 

@@ -12,6 +12,7 @@ import { useDashboard } from "@/lib/queries/use-dashboard";
 import {
   usePlannerEvents,
   useBoardTasks,
+  useCreateTask,
   useUpdateTask,
   useDeleteTask,
   useUpdateAppleEvent,
@@ -44,6 +45,9 @@ export default function SemainePage() {
 
   // Event edit popover state (double-click on calendar event)
   const [editingEvent, setEditingEvent] = useState<PlannerEvent | null>(null);
+
+  // Quick-create state (double-click on empty calendar slot)
+  const [quickCreate, setQuickCreate] = useState<{ date: string; hour: number } | null>(null);
 
   // Drag overlay
   const [dragLabel, setDragLabel] = useState<string | null>(null);
@@ -143,28 +147,46 @@ export default function SemainePage() {
     [updateTask, updateApple],
   );
 
-  // Schedule popover confirm
+  // Schedule popover confirm (existing task or new quick-create)
+  const createTask = useCreateTask();
   const handleSchedule = useCallback(
-    (taskId: number, startAt: string, endAt: string) => {
-      updateTask.mutate(
-        {
-          id: taskId,
-          start_at: startAt,
-          end_at: endAt,
-          scheduled: true,
-          triage_status: "a_planifier",
-          sync_apple: true,
-        },
-        {
-          onSuccess: () => {
-            toast.success("Tache planifiee !");
-            setSchedulingTask(null);
-            setScheduleDefaults({});
+    (taskId: number | null, startAt: string, endAt: string, title?: string) => {
+      const onOk = () => {
+        toast.success("Tache planifiee !");
+        setSchedulingTask(null);
+        setScheduleDefaults({});
+        setQuickCreate(null);
+      };
+      if (taskId) {
+        // Existing task → schedule it
+        updateTask.mutate(
+          {
+            id: taskId,
+            start_at: startAt,
+            end_at: endAt,
+            scheduled: true,
+            triage_status: "a_planifier",
+            sync_apple: true,
           },
-        },
-      );
+          { onSuccess: onOk },
+        );
+      } else if (title?.trim()) {
+        // Quick-create new task directly on calendar
+        createTask.mutate(
+          {
+            title: title.trim(),
+            category: "autre",
+            start_at: startAt,
+            end_at: endAt,
+            scheduled: true,
+            triage_status: "a_planifier",
+            sync_apple: true,
+          },
+          { onSuccess: onOk },
+        );
+      }
     },
-    [updateTask],
+    [updateTask, createTask],
   );
 
   const handleCloseSchedule = useCallback(() => {
@@ -319,6 +341,7 @@ export default function SemainePage() {
             isCurrentWeek={isCurrentWeek}
             onEditEvent={handleEditEvent}
             onDeleteEvent={handleDeleteEvent}
+            onCreateEvent={(date, hour) => setQuickCreate({ date, hour })}
           />
         </FadeInSection>
 
@@ -356,6 +379,17 @@ export default function SemainePage() {
           onConfirm={handleSchedule}
           onClose={handleCloseSchedule}
           isPending={updateTask.isPending}
+        />
+      )}
+
+      {/* Quick-create popover (double-click on empty calendar slot) */}
+      {quickCreate && (
+        <SchedulePopover
+          defaultDate={quickCreate.date}
+          defaultHour={quickCreate.hour}
+          onConfirm={handleSchedule}
+          onClose={() => setQuickCreate(null)}
+          isPending={createTask.isPending}
         />
       )}
 

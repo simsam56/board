@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import clsx from "clsx";
 import { useDroppable } from "@dnd-kit/core";
 import type { PlannerEvent } from "@/lib/types";
@@ -18,6 +19,7 @@ interface DayColumnProps {
   pxPerHour: number;
   onEditEvent?: (event: PlannerEvent) => void;
   onDeleteEvent?: (event: PlannerEvent) => void;
+  onCreateEvent?: (date: string, hour: number) => void;
 }
 
 export function DayColumn({
@@ -28,6 +30,7 @@ export function DayColumn({
   pxPerHour,
   onEditEvent,
   onDeleteEvent,
+  onCreateEvent,
 }: DayColumnProps) {
   const totalHours = endHour - startHour;
   const height = totalHours * pxPerHour;
@@ -37,6 +40,20 @@ export function DayColumn({
     id: `day-${day.date}`,
     data: { date: day.date, startHour, pxPerHour },
   });
+
+  // Double-click on empty area → quick-create
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!onCreateEvent) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const hour = startHour + y / pxPerHour;
+      // Snap to nearest 30min
+      const snapped = Math.floor(hour * 2) / 2;
+      onCreateEvent(day.date, snapped);
+    },
+    [onCreateEvent, day.date, startHour, pxPerHour],
+  );
 
   return (
     <div className="flex flex-col">
@@ -58,6 +75,7 @@ export function DayColumn({
         ref={setNodeRef}
         className={clsx("relative transition-colors", isOver && "rounded-lg bg-accent-blue/10")}
         style={{ height }}
+        onDoubleClick={handleDoubleClick}
       >
         {/* Hour lines */}
         {Array.from({ length: totalHours }, (_, i) => (
