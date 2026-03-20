@@ -15,7 +15,7 @@ from analytics.training_load import (
     generate_highlights,
     get_health_metrics,
 )
-from api.deps import get_db
+from api.deps import db_connection
 
 router = APIRouter(prefix="/api/health", tags=["health"])
 
@@ -23,19 +23,15 @@ router = APIRouter(prefix="/api/health", tags=["health"])
 @router.get("/metrics")
 def health_metrics() -> dict:
     """Retourne toutes les métriques santé avec fraîcheur."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         metrics = get_health_metrics(conn)
         return {"ok": True, "metrics": metrics}
-    finally:
-        conn.close()
 
 
 @router.get("/rings")
 def health_rings() -> dict:
     """Retourne les scores des 3 anneaux (Recovery, Activity, Sleep)."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         metrics = get_health_metrics(conn)
         daily_tss = build_daily_tss(conn)
         compute_pmc(daily_tss)
@@ -104,26 +100,20 @@ def health_rings() -> dict:
                 },
             },
         }
-    finally:
-        conn.close()
 
 
 @router.get("/weekly-trends")
 def weekly_trends(weeks: int = 8) -> dict:
     """Tendances hebdomadaires des métriques santé."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         trends = compute_weekly_trends(conn, weeks=weeks)
         return {"ok": True, "trends": trends}
-    finally:
-        conn.close()
 
 
 @router.get("/highlights")
 def health_highlights() -> dict:
     """Insights intelligents basés sur les données récentes."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         metrics = get_health_metrics(conn)
         daily_tss = build_daily_tss(conn)
         acwr = compute_acwr(daily_tss)
@@ -132,15 +122,12 @@ def health_highlights() -> dict:
         muscle_alerts = analyze_imbalances(muscle_cumul, weeks=4)
         highlights = generate_highlights(conn, metrics, acwr, running, muscle_alerts)
         return {"ok": True, "highlights": highlights}
-    finally:
-        conn.close()
 
 
 @router.get("/readiness")
 def readiness() -> dict:
     """Retourne le Wakeboard Readiness Score détaillé."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         metrics = get_health_metrics(conn)
         daily_tss = build_daily_tss(conn)
         acwr = compute_acwr(daily_tss)
@@ -161,5 +148,3 @@ def readiness() -> dict:
             freshness=freshness,
         )
         return {"ok": True, "readiness": score}
-    finally:
-        conn.close()

@@ -258,7 +258,7 @@ def _create_event_applescript(
 
     cal_target = f'calendar "{calendar_name}"' if calendar_name else 'calendar "Personnel"'
 
-    escaped_title = title.replace('"', '\\"').replace("'", "'")
+    escaped_title = title.replace("\\", "\\\\").replace('"', '\\"')
     # Construire date via AppleScript natif pour éviter les problèmes de locale
     start_iso = start_at[:19]
     end_iso = end_at[:19]
@@ -266,10 +266,10 @@ def _create_event_applescript(
     note_set = ""
     loc_set = ""
     if notes:
-        escaped_notes = notes.replace('"', '\\"').replace("'", "'")
+        escaped_notes = notes.replace("\\", "\\\\").replace('"', '\\"')
         note_set = f'\n        set description of newEvent to "{escaped_notes}"'
     if location:
-        escaped_loc = location.replace('"', '\\"').replace("'", "'")
+        escaped_loc = location.replace("\\", "\\\\").replace('"', '\\"')
         loc_set = f'\n        set location of newEvent to "{escaped_loc}"'
 
     script = f'''

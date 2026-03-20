@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from fastapi import APIRouter
 
-from api.deps import get_db
+from api.deps import db_connection
 
 router = APIRouter(prefix="/api/activities", tags=["activities"])
 
@@ -14,8 +14,7 @@ router = APIRouter(prefix="/api/activities", tags=["activities"])
 @router.get("/recent")
 def recent_activities(limit: int = 10) -> dict:
     """Dernières activités sportives."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         rows = conn.execute(
             """
             SELECT
@@ -52,15 +51,12 @@ def recent_activities(limit: int = 10) -> dict:
             })
 
         return {"ok": True, "activities": activities}
-    finally:
-        conn.close()
 
 
 @router.get("/weekly-grouped")
 def weekly_grouped_activities() -> dict:
     """Activités de la semaine groupées par type avec totaux."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         rows = conn.execute(
             """
             SELECT
@@ -101,15 +97,12 @@ def weekly_grouped_activities() -> dict:
             })
 
         return {"ok": True, "groups": list(groups.values())}
-    finally:
-        conn.close()
 
 
 @router.get("/weekly-hours")
 def weekly_hours(weeks: int = 12) -> dict:
     """Heures d'entraînement par semaine (série temporelle)."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         rows = conn.execute(
             """
             SELECT
@@ -126,5 +119,3 @@ def weekly_hours(weeks: int = 12) -> dict:
 
         series = [{"week": r[0], "hours": r[1]} for r in reversed(rows)]
         return {"ok": True, "series": series}
-    finally:
-        conn.close()

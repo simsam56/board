@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Generator
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -13,22 +15,32 @@ DB_PATH = Path("athlete.db")
 API_TOKEN: str = ""
 
 
-def get_db() -> sqlite3.Connection:
-    """Ouvre une connexion SQLite en lecture seule (WAL mode)."""
+def _open_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(str(DB_PATH), timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+def get_db() -> sqlite3.Connection:
+    """Ouvre une connexion SQLite en lecture seule (WAL mode)."""
+    return _open_conn()
 
 
 def get_db_rw() -> sqlite3.Connection:
     """Ouvre une connexion SQLite en lecture/écriture."""
-    conn = sqlite3.connect(str(DB_PATH), timeout=10)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+    return _open_conn()
+
+
+@contextmanager
+def db_connection() -> Generator[sqlite3.Connection, None, None]:
+    """Context manager : ouvre et ferme automatiquement une connexion DB."""
+    conn = _open_conn()
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 def require_auth(x_bord_token: str = Header(default="")) -> None:

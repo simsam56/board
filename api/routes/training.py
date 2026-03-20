@@ -12,7 +12,7 @@ from analytics.training_load import (
     compute_weekly_load_breakdown,
     get_prediction_history,
 )
-from api.deps import get_db
+from api.deps import db_connection
 
 router = APIRouter(prefix="/api/training", tags=["training"])
 
@@ -20,13 +20,10 @@ router = APIRouter(prefix="/api/training", tags=["training"])
 @router.get("/pmc")
 def pmc_data() -> dict:
     """Performance Management Chart : CTL, ATL, TSB."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         daily_tss = build_daily_tss(conn)
         pmc = compute_pmc(daily_tss)
-        # Dernière entrée = état actuel
         current = pmc[-1] if pmc else {}
-        # Série temporelle (limiter aux 6 derniers mois pour le graphe)
         series = pmc[-180:] if len(pmc) > 180 else pmc
         return {
             "ok": True,
@@ -47,50 +44,36 @@ def pmc_data() -> dict:
                 for d in series
             ],
         }
-    finally:
-        conn.close()
 
 
 @router.get("/acwr")
 def acwr_data() -> dict:
     """Acute:Chronic Workload Ratio."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         daily_tss = build_daily_tss(conn)
         data = compute_acwr(daily_tss)
         return {"ok": True, "acwr": data}
-    finally:
-        conn.close()
 
 
 @router.get("/weekly-load")
 def weekly_load(weeks: int = 12) -> dict:
     """Volume hebdomadaire par type d'activité."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         data = compute_weekly_load_breakdown(conn, weeks=weeks)
         return {"ok": True, "series": data}
-    finally:
-        conn.close()
 
 
 @router.get("/running")
 def running_analysis(weeks: int = 12) -> dict:
     """Analyse running : allure, prédictions Riegel, volume."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         data = analyze_running(conn, weeks=weeks)
         return {"ok": True, "running": data}
-    finally:
-        conn.close()
 
 
 @router.get("/running/prediction-history")
 def prediction_history(months: int = 6) -> dict:
     """Évolution de la prédiction 10K au fil des mois."""
-    conn = get_db()
-    try:
+    with db_connection() as conn:
         data = get_prediction_history(conn, months=months)
         return {"ok": True, "series": data}
-    finally:
-        conn.close()

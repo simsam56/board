@@ -344,77 +344,130 @@ def add_tasks_batch(
     default_calendar_name: str | None = None,
 ) -> dict:
     """
-    Création batch de tâches planner.
+    Création batch de tâches planner (transaction atomique).
     Supporte:
       - start_at/end_at directs
       - ou week_ref + weekday + time + duration_min
+    Toutes les insertions DB sont dans une seule transaction.
+    La sync Apple reste best-effort par tâche.
     """
+    db_path = Path(db_path)
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
     created: list[dict] = []
     errors: list[dict] = []
 
-    for idx, raw in enumerate(tasks or []):
-        try:
-            title = str(raw.get("title") or "").strip()
-            if not title:
-                raise ValueError("missing_title")
+    try:
+        for idx, raw in enumerate(tasks or []):
+            try:
+                title = str(raw.get("title") or "").strip()
+                if not title:
+                    raise ValueError("missing_title")
 
-            category = normalize_category(raw.get("category"))
-            if category == "autre" and raw.get("type"):
-                # fallback type -> category
-                t = str(raw.get("type")).lower().strip()
-                type_map = {
-                    "cardio": "sante",
-                    "musculation": "sante",
-                    "mobilite": "sante",
-                    "sport_libre": "sante",
-                    "travail": "travail",
-                    "apprentissage": "apprentissage",
-                    "relationnel": "relationnel",
-                }
-                category = type_map.get(t, category)
+                category = normalize_category(raw.get("category"))
+                if category == "autre" and raw.get("type"):
+                    t = str(raw.get("type")).lower().strip()
+                    type_map = {
+                        "cardio": "sante",
+                        "musculation": "sante",
+                        "mobilite": "sante",
+                        "sport_libre": "sante",
+                        "travail": "travail",
+                        "apprentissage": "apprentissage",
+                        "relationnel": "relationnel",
+                    }
+                    category = type_map.get(t, category)
 
-            start_at = raw.get("start_at")
-            end_at = raw.get("end_at")
-            if not start_at or not end_at:
-                start_at, end_at = parse_relative_slot(
-                    week_ref=raw.get("week_ref") or raw.get("week"),
-                    weekday=raw.get("weekday"),
-                    task_time=raw.get("time") or raw.get("task_time"),
-                    duration_min=raw.get("duration_min"),
+                start_at = raw.get("start_at")
+                end_at = raw.get("end_at")
+                if not start_at or not end_at:
+                    start_at, end_at = parse_relative_slot(
+                        week_ref=raw.get("week_ref") or raw.get("week"),
+                        weekday=raw.get("weekday"),
+                        task_time=raw.get("time") or raw.get("task_time"),
+                        duration_min=raw.get("duration_min"),
+                    )
+
+                sync_apple = bool(raw.get("sync_apple", default_sync_apple))
+                notes = raw.get("notes")
+                calendar_uid = None
+                source = "local"
+                sync_error = None
+
+                if sync_apple and start_at and end_at:
+                    try:
+                        from integrations.apple_calendar import create_apple_calendar_event
+                        res = create_apple_calendar_event(
+                            title=title,
+                            start_at=str(start_at),
+                            end_at=str(end_at),
+                            notes=str(notes)[:5000] if notes else None,
+                            calendar_name=raw.get("calendar_name") or default_calendar_name,
+                        )
+                        if res.get("enabled"):
+                            calendar_uid = res.get("event_uid")
+                            source = "apple_calendar"
+                        else:
+                            sync_error = res.get("error")
+                    except Exception as e:
+                        sync_error = str(e)
+
+                ts = normalize_triage_status(None)
+                if start_at and end_at and ts == "a_determiner":
+                    ts = "a_planifier"
+
+                cursor.execute(
+                    """
+                    INSERT INTO planner_tasks
+                      (title, category, start_at, end_at, notes, status, source, calendar_uid,
+                       triage_status, scheduled, scheduled_date, scheduled_start, scheduled_end,
+                       created_at, updated_at)
+                    VALUES (?,?,?,?,?,'planned',?,?,?,1,?,?,?,?,?)
+                    """,
+                    (
+                        title.strip(),
+                        normalize_category(category),
+                        str(start_at) or "",
+                        str(end_at) or "",
+                        str(notes)[:5000] if notes else None,
+                        source,
+                        calendar_uid,
+                        ts,
+                        str(start_at)[:10] if start_at else None,
+                        str(start_at) if start_at else None,
+                        str(end_at) if end_at else None,
+                        now_iso(),
+                        now_iso(),
+                    ),
                 )
+                task_id = cursor.lastrowid
 
-            sync_apple = bool(raw.get("sync_apple", default_sync_apple))
-            notes = raw.get("notes")
-            res = add_task(
-                db_path=db_path,
-                title=title,
-                category=category,
-                start_at=str(start_at),
-                end_at=str(end_at),
-                notes=str(notes)[:5000] if notes is not None else None,
-                sync_to_apple=sync_apple,
-                apple_calendar_name=raw.get("calendar_name") or default_calendar_name,
-            )
-            created.append(
-                {
+                created.append({
                     "index": idx,
                     "title": title,
-                    "task_id": res.get("task_id"),
-                    "start_at": res.get("start_at"),
-                    "end_at": res.get("end_at"),
-                    "category": res.get("category"),
-                    "apple_uid": res.get("apple_uid"),
-                    "apple_sync_error": res.get("apple_sync_error"),
-                }
-            )
-        except Exception as e:
-            errors.append(
-                {
+                    "task_id": task_id,
+                    "start_at": str(start_at),
+                    "end_at": str(end_at),
+                    "category": normalize_category(category),
+                    "apple_uid": calendar_uid,
+                    "apple_sync_error": sync_error,
+                })
+            except Exception as e:
+                errors.append({
                     "index": idx,
                     "title": raw.get("title"),
                     "error": str(e),
-                }
-            )
+                })
+
+        if errors:
+            conn.rollback()
+            created.clear()
+        else:
+            conn.commit()
+    finally:
+        conn.close()
 
     return {
         "ok": len(errors) == 0,

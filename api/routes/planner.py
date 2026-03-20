@@ -1,7 +1,8 @@
-"""Routes planner (port depuis cockpit_server.py)."""
+"""Routes planner et calendrier (consolidé)."""
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -10,9 +11,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from analytics import planner
 from api.deps import DB_PATH, require_auth
 from integrations.apple_calendar import (
+    create_apple_calendar_event,
     diagnose_apple_calendar,
+    get_upcoming_events,
     sync_apple_calendar,
 )
+
+logger = logging.getLogger("bord.planner")
 
 router = APIRouter(prefix="/api/planner", tags=["planner"])
 
@@ -54,8 +59,8 @@ def _read_events(start_at: str | None = None, end_at: str | None = None) -> list
 def _sync_calendar_soft() -> None:
     try:
         sync_apple_calendar(DB_PATH, days_ahead=PLANNER_WINDOW_DAYS)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Sync calendrier Apple: %s", e)
 
 
 # ── GET ────────────────────────────────────────────────────────────
@@ -234,8 +239,8 @@ def sync_calendar(
     sync_result: dict = {}
     try:
         sync_result = sync_apple_calendar(DB_PATH, days_ahead=PLANNER_WINDOW_DAYS)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Sync calendrier: %s", e)
     events = _read_events()
     return {"ok": True, "events": events, "sync": sync_result}
 
@@ -356,3 +361,58 @@ def delete_apple_event(
     background_tasks.add_task(_sync_calendar_soft)
     events = _read_events()
     return {"ok": bool(res.get("enabled")), "result": res, "events": events}
+
+
+# ── Routes calendrier (consolidées depuis calendar.py) ──────────────
+
+calendar_router = APIRouter(prefix="/api/calendar", tags=["calendar"])
+
+
+@calendar_router.get("/status")
+def calendar_status_public() -> dict:
+    status = diagnose_apple_calendar(DB_PATH)
+    return {"ok": True, "calendar": status}
+
+
+@calendar_router.get("/events")
+def calendar_events(days: int = 30, _: None = Depends(require_auth)) -> dict:
+    try:
+        events = get_upcoming_events(db_path=DB_PATH, days_ahead=days, limit=100)
+    except Exception as e:
+        logger.warning("Lecture événements calendrier: %s", e)
+        events = []
+    return {"ok": True, "events": events}
+
+
+@calendar_router.get("/sync")
+def calendar_sync_get(days: int = 30, _: None = Depends(require_auth)) -> dict:
+    result = sync_apple_calendar(db_path=DB_PATH, days_ahead=days)
+    return {"ok": result.get("enabled", False), "sync": result}
+
+
+@calendar_router.post("/create", status_code=201)
+def calendar_create_event(body: dict[str, Any], _: None = Depends(require_auth)) -> dict:
+    title = str(body.get("title", "")).strip()
+    start_at = body.get("start_at")
+    end_at = body.get("end_at")
+    notes = body.get("notes")
+    location = body.get("location")
+    calendar_name = body.get("calendar_name")
+
+    if not title or not start_at or not end_at:
+        return {"ok": False, "error": "missing_required_fields"}
+
+    result = create_apple_calendar_event(
+        title=title,
+        start_at=start_at,
+        end_at=end_at,
+        notes=notes,
+        location=location,
+        calendar_name=calendar_name,
+    )
+
+    if result.get("enabled"):
+        sync_apple_calendar(db_path=DB_PATH, days_ahead=30)
+        events = get_upcoming_events(db_path=DB_PATH, days_ahead=30, limit=100)
+        return {"ok": True, "created": result, "events": events}
+    return {"ok": False, "error": result.get("error", "creation_failed")}
