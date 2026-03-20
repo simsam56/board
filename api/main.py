@@ -28,7 +28,8 @@ from analytics.training_load import (
 from api import deps
 from api.routes import activities, health, muscles, training
 from api.routes import planner as planner_routes
-from pipeline.schema import get_connection, init_db, migrate_db
+from api.routes import sync as sync_routes
+from pipeline.schema import get_connection, init_db, migrate_db, update_sync_metadata
 
 logger = logging.getLogger("bord.api")
 
@@ -59,6 +60,59 @@ async def lifespan(app: FastAPI):
     print(f"   DB: {db_path}")
     if api_token:
         print("   API write protection: enabled")
+
+    # Auto-sync en arrière-plan (non-bloquant)
+    import threading
+
+    def _startup_sync():
+        """Sync silencieuse Garmin + Apple Calendar au démarrage."""
+        # 1. Garmin (3 derniers jours)
+        try:
+            from pipeline.parse_garmin_connect import GARMIN_AVAILABLE
+            from pipeline.parse_garmin_connect import run as garmin_run
+
+            if GARMIN_AVAILABLE:
+                from api.routes.sync import _garmin_configured
+
+                if _garmin_configured():
+                    conn = get_connection(deps.DB_PATH)
+                    update_sync_metadata(conn, "garmin_connect", "running")
+                    conn.close()
+
+                    result = garmin_run(db_path=deps.DB_PATH, days=3, verbose=False, refresh_tail_days=3)
+
+                    conn = get_connection(deps.DB_PATH)
+                    if "error" not in result:
+                        update_sync_metadata(conn, "garmin_connect", "success", result)
+                        print(
+                            f"   ✅ Auto-sync Garmin: {result.get('activities_inserted', 0)} "
+                            f"activités, {result.get('metrics_inserted', 0)} métriques"
+                        )
+                    else:
+                        update_sync_metadata(conn, "garmin_connect", "error", result)
+                        print(f"   ⚠️  Auto-sync Garmin: {result.get('error')}")
+                    conn.close()
+                    deps.invalidate_cache()
+        except Exception as e:
+            logger.warning("Auto-sync Garmin: %s", e)
+
+        # 2. Apple Calendar
+        try:
+            from integrations.apple_calendar import sync_apple_calendar
+
+            sync_result = sync_apple_calendar(deps.DB_PATH, days_ahead=120)
+            conn = get_connection(deps.DB_PATH)
+            status = "success" if sync_result.get("enabled") else "error"
+            update_sync_metadata(conn, "apple_calendar", status, sync_result)
+            conn.close()
+            synced = sync_result.get("events_synced", 0)
+            print(f"   ✅ Auto-sync Calendar: {synced} événements")
+            deps.invalidate_cache()
+        except Exception as e:
+            logger.warning("Auto-sync Calendar: %s", e)
+
+    t = threading.Thread(target=_startup_sync, daemon=True)
+    t.start()
 
     yield
 
@@ -91,6 +145,7 @@ app.include_router(health.router)
 app.include_router(training.router)
 app.include_router(muscles.router)
 app.include_router(activities.router)
+app.include_router(sync_routes.router)
 
 
 # ── Helpers dashboard ─────────────────────────────────────────────────

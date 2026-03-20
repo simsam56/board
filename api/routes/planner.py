@@ -16,6 +16,7 @@ from integrations.apple_calendar import (
     get_upcoming_events,
     sync_apple_calendar,
 )
+from pipeline.schema import get_connection, update_sync_metadata
 
 logger = logging.getLogger("bord.planner")
 
@@ -237,10 +238,22 @@ def sync_calendar(
     _: None = Depends(require_auth),
 ) -> dict:
     sync_result: dict = {}
+    status = "error"
     try:
         sync_result = sync_apple_calendar(DB_PATH, days_ahead=PLANNER_WINDOW_DAYS)
+        status = "success" if sync_result.get("enabled") or sync_result.get("events_synced") else "error"
     except Exception as e:
         logger.warning("Sync calendrier: %s", e)
+        sync_result = {"error": str(e)}
+
+    # Enregistrer dans sync_metadata
+    try:
+        conn = get_connection(DB_PATH)
+        update_sync_metadata(conn, "apple_calendar", status, sync_result)
+        conn.close()
+    except Exception as e:
+        logger.warning("Sync metadata update: %s", e)
+
     events = _read_events()
     return {"ok": True, "events": events, "sync": sync_result}
 

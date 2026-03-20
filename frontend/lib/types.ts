@@ -231,6 +231,39 @@ export interface CalendarStatus {
   error: string | null;
 }
 
+// ── Sync ─────────────────────────────────────────────────────────
+
+export interface SyncSourceStatus {
+  available: boolean;
+  configured: boolean;
+  last_sync: string | null;
+  status: "success" | "error" | "running" | null;
+  result: Record<string, number | string> | null;
+}
+
+export interface SyncStatus {
+  ok: boolean;
+  sources: {
+    garmin: SyncSourceStatus;
+    apple_calendar: SyncSourceStatus;
+  };
+}
+
+export interface GarminSyncResult {
+  ok: boolean;
+  error?: string;
+  detail?: string;
+  sync?: {
+    activities_fetched: number;
+    activities_inserted: number;
+    activities_skipped: number;
+    strength_sessions_inserted: number;
+    exercise_sets_inserted: number;
+    metrics_inserted: number;
+    duration_s: number;
+  };
+}
+
 // ── Dashboard (agrégat) ───────────────────────────────────────────
 
 export interface WeekSummary {

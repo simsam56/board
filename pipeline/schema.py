@@ -1,8 +1,10 @@
 """
-schema.py — PerformOS v3 · Schéma SQLite complet
+schema.py — Bord · Schéma SQLite complet
 """
 
+import json
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 DDL = """
@@ -153,6 +155,17 @@ CREATE INDEX IF NOT EXISTS idx_calendar_events_start ON calendar_events(start_at
 CREATE INDEX IF NOT EXISTS idx_calendar_events_cal   ON calendar_events(calendar_name);
 CREATE INDEX IF NOT EXISTS idx_planner_tasks_start   ON planner_tasks(start_at);
 CREATE INDEX IF NOT EXISTS idx_planner_tasks_cat     ON planner_tasks(category);
+
+-- ──────────────────────────────────────────────────────────────
+-- Métadonnées de synchronisation
+-- ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS sync_metadata (
+    source      TEXT PRIMARY KEY,   -- 'garmin_connect' | 'apple_calendar'
+    last_sync   TEXT,               -- ISO8601
+    status      TEXT,               -- 'success' | 'error' | 'running'
+    result      TEXT,               -- JSON détails
+    updated_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
@@ -213,7 +226,66 @@ def migrate_db(conn: sqlite3.Connection) -> None:
             "UPDATE planner_tasks SET category=? WHERE category=?",
             (new_cat, old_cat),
         )
+    # Créer sync_metadata si absente (migration safe)
+    tables = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    ).fetchall()}
+    if "sync_metadata" not in tables:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sync_metadata (
+                source      TEXT PRIMARY KEY,
+                last_sync   TEXT,
+                status      TEXT,
+                result      TEXT,
+                updated_at  TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
     conn.commit()
+
+
+# ── Sync metadata helpers ────────────────────────────────────────
+
+
+def update_sync_metadata(
+    conn: sqlite3.Connection,
+    source: str,
+    status: str,
+    result: dict | None = None,
+) -> None:
+    """Upsert sync metadata pour une source donnée."""
+    now = datetime.now(UTC).isoformat()
+    result_json = json.dumps(result, default=str) if result else None
+    conn.execute(
+        """INSERT INTO sync_metadata (source, last_sync, status, result, updated_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(source) DO UPDATE SET
+             last_sync = excluded.last_sync,
+             status = excluded.status,
+             result = excluded.result,
+             updated_at = excluded.updated_at
+        """,
+        (source, now, status, result_json, now),
+    )
+    conn.commit()
+
+
+def get_sync_metadata(conn: sqlite3.Connection, source: str) -> dict | None:
+    """Lit les métadonnées de sync pour une source."""
+    row = conn.execute(
+        "SELECT source, last_sync, status, result, updated_at FROM sync_metadata WHERE source = ?",
+        (source,),
+    ).fetchone()
+    if not row:
+        return None
+    result_raw = row[3] if isinstance(row, tuple) else row["result"]
+    return {
+        "source": row[0] if isinstance(row, tuple) else row["source"],
+        "last_sync": row[1] if isinstance(row, tuple) else row["last_sync"],
+        "status": row[2] if isinstance(row, tuple) else row["status"],
+        "result": json.loads(result_raw) if result_raw else None,
+        "updated_at": row[4] if isinstance(row, tuple) else row["updated_at"],
+    }
 
 
 # Source priority: higher index = preferred when deduplicating

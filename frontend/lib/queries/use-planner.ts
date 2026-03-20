@@ -104,6 +104,7 @@ export function useSyncCalendar() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["planner-events"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["sync-status"] });
     },
   });
 }
