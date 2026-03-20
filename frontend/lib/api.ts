@@ -4,6 +4,11 @@
  */
 
 const API_BASE = "/api/python";
+const API_TOKEN = process.env.NEXT_PUBLIC_BORD_API_TOKEN ?? "";
+
+function authHeaders(): Record<string, string> {
+  return API_TOKEN ? { "X-Bord-Token": API_TOKEN } : {};
+}
 
 export class ApiError extends Error {
   constructor(
@@ -14,10 +19,21 @@ export class ApiError extends Error {
   }
 }
 
+async function parseError(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    return body.detail ?? body.error ?? `API error: ${res.status}`;
+  } catch {
+    return `API error: ${res.status}`;
+  }
+}
+
 export async function fetchAPI<T = unknown>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { ...authHeaders() },
+  });
   if (!res.ok) {
-    throw new ApiError(res.status, `API error: ${res.status}`);
+    throw new ApiError(res.status, await parseError(res));
   }
   return res.json();
 }
@@ -31,12 +47,12 @@ export async function mutateAPI<T = unknown>(
     method,
     headers: {
       "Content-Type": "application/json",
-      // Token sera ajouté si configuré
+      ...authHeaders(),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new ApiError(res.status, `API error: ${res.status}`);
+    throw new ApiError(res.status, await parseError(res));
   }
   return res.json();
 }

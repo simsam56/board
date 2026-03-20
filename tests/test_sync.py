@@ -6,7 +6,7 @@ Usage:
     python3 tests/test_sync.py
 
     # Avec un port/token personnalisé :
-    PERFORMOS_PORT=8765 PERFORMOS_API_TOKEN=montoken python3 tests/test_sync.py
+    BORD_PORT=8765 BORD_API_TOKEN=montoken python3 tests/test_sync.py
 """
 
 import json
@@ -20,11 +20,11 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-BASE_URL = f"http://127.0.0.1:{os.environ.get('PERFORMOS_PORT', '8765')}"
+BASE_URL = f"http://127.0.0.1:{os.environ.get('BORD_PORT', '8765')}"
 API_BASE = f"{BASE_URL}/api/planner"
 
 # Token: env var > extraction depuis dashboard.html > fallback
-TOKEN = os.environ.get("PERFORMOS_API_TOKEN", "")
+TOKEN = os.environ.get("BORD_API_TOKEN", "")
 if not TOKEN:
     try:
         import re
@@ -36,14 +36,14 @@ if not TOKEN:
     except Exception:
         pass
 if not TOKEN:
-    TOKEN = "performos"
+    TOKEN = "bord"
 
 
 def _server_reachable() -> bool:
     """Check if the API server is running."""
     try:
         req = urllib.request.Request(f"{API_BASE}/health", method="GET")
-        req.add_header("X-PerformOS-Token", TOKEN)
+        req.add_header("X-Bord-Token", TOKEN)
         urllib.request.urlopen(req, timeout=2)
         return True
     except Exception:
@@ -61,7 +61,7 @@ def api(method: str, path: str, body: dict | None = None) -> dict:
     data = json.dumps(body or {}).encode() if body is not None else b"{}"
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Content-Type", "application/json")
-    req.add_header("X-PerformOS-Token", TOKEN)
+    req.add_header("X-Bord-Token", TOKEN)
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
             return {"status": resp.status, "body": json.loads(resp.read())}
@@ -169,7 +169,7 @@ def cleanup_task(task_id: int):
 
 def main():
     print(f"\n{'=' * 60}")
-    print(f"PerformOS Sync Tests — {BASE_URL}")
+    print(f"Bord Sync Tests — {BASE_URL}")
     print(f"Token: {TOKEN[:8]}...")
     print(f"{'=' * 60}\n")
 
