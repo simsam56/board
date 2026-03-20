@@ -9,13 +9,21 @@ export interface DayInfo {
   isToday: boolean;
 }
 
+/** Format local date as YYYY-MM-DD (no UTC shift). */
+function toLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function getWeekDays(weekStart: string): DayInfo[] {
-  const start = new Date(weekStart + "T00:00:00");
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const start = new Date(weekStart + "T12:00:00"); // noon to avoid DST edge
+  const todayStr = toLocalDate(new Date());
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
-    const date = d.toISOString().slice(0, 10);
+    const date = toLocalDate(d);
     return {
       date,
       label: DAY_LABELS[i],

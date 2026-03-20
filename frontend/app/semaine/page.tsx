@@ -124,7 +124,7 @@ export default function SemainePage() {
         const newStatus = overData.triageStatus as TriageStatus;
         if (task.triage_status === newStatus) return;
         updateTask.mutate(
-          { id: task.id, triage_status: newStatus },
+          { id: task.task_id, triage_status: newStatus },
           {
             onSuccess: () => {
               const labels: Record<string, string> = {
@@ -212,18 +212,24 @@ export default function SemainePage() {
   );
 
   // Week navigation
-  const dashboardWeekStart = data?.week?.start ?? new Date().toISOString().slice(0, 10);
+  const dashboardWeekStart = data?.week?.start ?? (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  })();
+
+  const toLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
   const displayedWeekStart = useMemo(() => {
-    const base = new Date(dashboardWeekStart + "T00:00:00");
+    const base = new Date(dashboardWeekStart + "T12:00:00");
     base.setDate(base.getDate() + weekOffset * 7);
-    return base.toISOString().slice(0, 10);
+    return toLocal(base);
   }, [dashboardWeekStart, weekOffset]);
 
   const displayedWeekEnd = useMemo(() => {
-    const start = new Date(displayedWeekStart + "T00:00:00");
+    const start = new Date(displayedWeekStart + "T12:00:00");
     start.setDate(start.getDate() + 6);
-    return start.toISOString().slice(0, 10);
+    return toLocal(start);
   }, [displayedWeekStart]);
 
   const isCurrentWeek = weekOffset === 0;

@@ -44,10 +44,10 @@ export function WeekCalendar({
   const firstDay = days[0];
   const lastDay = days[6];
   const fmt = (dateStr: string) => {
-    const d = new Date(dateStr + "T00:00:00");
+    const d = new Date(dateStr + "T12:00:00");
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   };
-  const yearStr = new Date(firstDay.date + "T00:00:00").getFullYear();
+  const yearStr = new Date(firstDay.date + "T12:00:00").getFullYear();
   const weekLabel = `${fmt(firstDay.date)} – ${fmt(lastDay.date)} ${yearStr}`;
 
   return (

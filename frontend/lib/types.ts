@@ -143,11 +143,15 @@ export interface PlannerEvent {
 }
 
 export interface BoardTask {
-  id: number;
+  id: string;         // "task:50" — display ID
+  task_id: number;    // 50 — backend numeric ID for mutations
   title: string;
   category: Category;
   triage_status: TriageStatus;
   notes: string | null;
+  source: "local" | "apple_calendar";
+  calendar_uid: string | null;
+  scheduled: boolean;
   created_at: string;
 }
 

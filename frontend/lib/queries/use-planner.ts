@@ -27,16 +27,25 @@ export function useBoardTasks() {
   });
 }
 
+/** Invalide toutes les queries planner + dashboard, avec re-fetch différé
+ *  pour laisser la background sync Apple Calendar terminer. */
+function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["planner-events"] });
+  qc.invalidateQueries({ queryKey: ["board-tasks"] });
+  qc.invalidateQueries({ queryKey: ["dashboard"] });
+  // Re-fetch après 1.5s pour capter les changements de la background sync Apple
+  setTimeout(() => {
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["planner-events"] });
+  }, 1500);
+}
+
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       mutateAPI("/planner/tasks", "POST", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["board-tasks"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -45,11 +54,7 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) =>
       mutateAPI(`/planner/tasks/${id}`, "PATCH", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["board-tasks"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -57,11 +62,7 @@ export function useDeleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => mutateAPI(`/planner/tasks/${id}`, "DELETE"),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["board-tasks"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -70,10 +71,7 @@ export function useUpdateAppleEvent() {
   return useMutation({
     mutationFn: ({ uid, ...body }: { uid: string } & Record<string, unknown>) =>
       mutateAPI(`/planner/apple/${encodeURIComponent(uid)}`, "PATCH", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -82,10 +80,7 @@ export function useDeleteAppleEvent() {
   return useMutation({
     mutationFn: (uid: string) =>
       mutateAPI(`/planner/apple/${encodeURIComponent(uid)}`, "DELETE"),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -102,8 +97,7 @@ export function useSyncCalendar() {
   return useMutation({
     mutationFn: () => mutateAPI("/planner/calendar/sync", "POST"),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["planner-events"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      invalidateAll(qc);
       qc.invalidateQueries({ queryKey: ["sync-status"] });
     },
   });

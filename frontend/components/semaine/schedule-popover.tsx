@@ -42,7 +42,7 @@ export function SchedulePopover({
     const start = new Date(startAt);
     const end = new Date(start.getTime() + duration * 60_000);
     const endAt = end.toISOString().slice(0, 19);
-    onConfirm(task.id, startAt, endAt);
+    onConfirm(task.task_id, startAt, endAt);
   };
 
   return (
