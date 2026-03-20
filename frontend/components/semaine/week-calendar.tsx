@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PlannerEvent } from "@/lib/types";
 import { DayColumn } from "./day-column";
@@ -38,21 +37,6 @@ export function WeekCalendar({
   const totalHours = endHour - startHour;
   const pxPerHour = Math.max(40, 600 / totalHours);
   const gridHeight = totalHours * pxPerHour;
-
-  // Current time indicator
-  const [nowPercent, setNowPercent] = useState<number | null>(null);
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const mins = (now.getHours() - startHour) * 60 + now.getMinutes();
-      const total = totalHours * 60;
-      const pct = (mins / total) * 100;
-      setNowPercent(pct >= 0 && pct <= 100 ? pct : null);
-    };
-    update();
-    const id = setInterval(update, 60_000);
-    return () => clearInterval(id);
-  }, [startHour, totalHours]);
 
   const hours = Array.from({ length: totalHours }, (_, i) => startHour + i);
 
@@ -138,15 +122,6 @@ export function WeekCalendar({
             />
           ))}
 
-          {/* Current time line (only on current week) */}
-          {isCurrentWeek && nowPercent !== null && (
-            <div
-              className="pointer-events-none absolute left-[3rem] right-0 z-10 border-t-2 border-accent-red/70"
-              style={{ top: `${nowPercent}%` }}
-            >
-              <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-accent-red" />
-            </div>
-          )}
         </div>
       </div>
     </div>

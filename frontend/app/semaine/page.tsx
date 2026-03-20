@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { DndContext, DragOverlay, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useDashboard } from "@/lib/queries/use-dashboard";
@@ -13,7 +17,7 @@ import {
   useUpdateAppleEvent,
   useDeleteAppleEvent,
 } from "@/lib/queries/use-planner";
-import type { BoardTask, PlannerEvent, TriageStatus } from "@/lib/types";
+import type { BoardTask, Category, PlannerEvent, TriageStatus } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/constants";
 import { WeekCalendar } from "@/components/semaine/week-calendar";
 import { FadeInSection } from "@/components/health/fade-in-section";
@@ -72,6 +76,7 @@ export default function SemainePage() {
       // ── Calendar event dragged to another day column ──
       if (calEvent && overData?.date) {
         const newDate = overData.date as string;
+        if (newDate === calEvent.start_at.slice(0, 10)) return; // same day, no-op
         const oldStart = new Date(calEvent.start_at);
         const oldEnd = new Date(calEvent.end_at);
         const durationMs = oldEnd.getTime() - oldStart.getTime();
@@ -82,15 +87,25 @@ export default function SemainePage() {
         const newEndDate = new Date(new Date(newStartAt).getTime() + durationMs);
         const newEndAt = `${newDate}T${pad(newEndDate.getHours())}:${pad(newEndDate.getMinutes())}:00`;
 
+        const onOk = () => toast.success("Evenement deplace");
         if (calEvent.task_id) {
           updateTask.mutate(
-            { id: calEvent.task_id, start_at: newStartAt, end_at: newEndAt, sync_apple: true },
-            { onSuccess: () => toast.success("Evenement deplace") },
+            {
+              id: calEvent.task_id,
+              start_at: newStartAt,
+              end_at: newEndAt,
+              scheduled: true,
+              scheduled_date: newDate,
+              scheduled_start: newStartAt,
+              scheduled_end: newEndAt,
+              sync_apple: true,
+            },
+            { onSuccess: onOk },
           );
         } else if (calEvent.calendar_uid) {
           updateApple.mutate(
             { uid: calEvent.calendar_uid, start_at: newStartAt, end_at: newEndAt, title: calEvent.title },
-            { onSuccess: () => toast.success("Evenement deplace") },
+            { onSuccess: onOk },
           );
         }
         return;
@@ -125,7 +140,7 @@ export default function SemainePage() {
         );
       }
     },
-    [updateTask],
+    [updateTask, updateApple],
   );
 
   // Schedule popover confirm
@@ -163,14 +178,14 @@ export default function SemainePage() {
   }, []);
 
   const handleSaveEdit = useCallback(
-    (ev: PlannerEvent, startAt: string, endAt: string, title: string) => {
+    (ev: PlannerEvent, startAt: string, endAt: string, title: string, category?: Category) => {
       const onSuccess = () => {
         toast.success("Evenement modifie");
         setEditingEvent(null);
       };
       if (ev.task_id) {
         updateTask.mutate(
-          { id: ev.task_id, start_at: startAt, end_at: endAt, title, sync_apple: true },
+          { id: ev.task_id, start_at: startAt, end_at: endAt, title, category, sync_apple: true },
           { onSuccess },
         );
       } else if (ev.calendar_uid) {
