@@ -13,6 +13,9 @@
 | `canaux-offres-emploi.csv` | Job boards & canaux fiables pour ce profil (avec filtre géo réel) |
 | `freelance-plateformes.csv` | Plateformes & communautés freelance auto/IA |
 | `sources-veille.csv` | Sources d'actu & signaux faibles (presse, CCI, BDI, BPI, clusters) |
+| `financement-dispositifs.csv` | **[MAJ]** Rails de financement formation & conseil (Qualiopi, OPCO, FNE, France Num, Région, Bpifrance) |
+| `concurrents.csv` | **[MAJ]** Paysage concurrentiel formation/accompagnement no-code/IA + différenciation |
+| `ressources-rgpd-gouvernance.csv` | **[MAJ]** Ressources CNIL/AI Act pour le volet « droit d'utiliser les données » |
 
 ---
 
@@ -29,6 +32,34 @@
 5. **AudéLor (revue de presse/Barographe)** — LE flux de signaux faibles n°1 pour ta zone (implantations, investissements, recrutements Lorient/Quimperlé). À mettre en veille active. `[vérifié]`
 
 **Signaux macro confirmés :** 900 M€+ de levées de fonds en Bretagne en 2025 (dont Socomore 100 M€ industriel, Cailabs 57 M€ deeptech). Dispositif "Rebond Industriel" actif autour de Lorient. `[vérifié]`
+
+---
+
+## 1bis. REPOSITIONNEMENT — Accompagnement + Formation (mise à jour)
+
+> Pivot décidé : on ne vend plus l'outil sur-mesure (livrable one-shot), on vend **« je rends vos équipes autonomes »** = accompagnement + montée en compétence + intégration des données + volet **droit/gouvernance des données** (RGPD). Le système posé devient le support pédagogique.
+
+### La clé stratégique : deux rails de financement empilables
+| | Rail **FORMATION** | Rail **CONSEIL / ACCOMPAGNEMENT** |
+|---|---|---|
+| Finance | actions de formation | prestation de conseil/diagnostic |
+| Via | OPCO 2i, FNE-Formation, CPF | France Num, Bpifrance Diag, Pass Transitions (Région) |
+| **Qualiopi requis ?** | ✅ Oui | ❌ **Non** |
+
+→ **Tu peux facturer et être financé AVANT d'avoir Qualiopi**, via le rail conseil. Il finance le lancement pendant que Qualiopi + OPCO ouvrent le volume formation ensuite.
+
+### Parcours « devenir finançable » (ordre)
+1. **Immédiat (sans Qualiopi)** : devenir **Activateur France Num** (crédibilité État + leads Morbihan) ; positionner le conseil sur **Pass Transitions / Inno Conseil** (Région) ; prescripteur **Bpifrance Diag Data IA**.
+2. **NDA** : déclaration d'activité d'organisme de formation auprès de la **DREETS Bretagne** (déclenchée par la 1ʳᵉ convention — Compositic).
+3. **Qualiopi** : lancer la certif, ou démarrer en **portage** par un OF déjà certifié pour vendre tout de suite.
+4. **OPCO 2i** (naval/composite/métal) + **FNE-Formation « transition numérique »** = meilleur rail pour financer du no-code/IA.
+
+### Différenciation (marché déjà occupé)
+- **Concurrent le plus direct : Breizh e-nov** (Finistère) — même offre no-code + IA + formation + « sécurité des données ». À dépasser par : (1) volet données traité en **juridique** (RGPD/base légale/registre/**AI Act — échéance 2 août 2026**), pas juste « sécurité » ; (2) posture **autonomie / anti-agence** ; (3) territoire **Sud-Bretagne (Lorient/Vannes)** + remote.
+- Prescripteurs à nouer (pas concurrents) : **ADN Ouest**, **CCI Formation Morbihan**.
+
+### Première référence
+- **Compositic** (CRT composite, secteur Lorient) — vente de formation en cours = 1ʳᵉ réf + cas d'usage + convention déclenchant le NDA. À capitaliser (témoignage, effet réseau composite).
 
 ---
 
