@@ -1,0 +1,15 @@
+nom,url,type,pertinence_auto_ia,filtre_geo,confiance,notes
+Malt,https://www.malt.fr/,Missions PME + grands comptes,Elevee (tags automation/IA/airtable),Oui (mot-cle + proximite geo),verifie,Canal n1 le plus exploitable ; page tag renvoyait 403 anti-bot
+Comet,https://www.comet.co/,Missions longues data/dev/cyber,Bonne (data/IA),Matching plateforme,a confirmer,
+Creme de la Creme,https://www.cremedelacreme.io/,Plateforme elite numerique,Bonne (data/IA/produit),a confirmer,a confirmer,
+LeHibou,https://www.lehibou.com/,Consulting IT grands comptes,Data/IT (no-code moins central),a confirmer,a confirmer,Missions longues 12-18 mois
+FreelanceRepublik,https://www.freelancerepublik.com/,100% tech selectif,Bonne (data/IA confirmes),a confirmer,a confirmer,Test technique
+Free-Work,https://www.free-work.com/fr/tech-it/jobs/ia,Jobboard tech + IA,Bonne (categorie IA dediee),a confirmer,verifie,
+Freelance-Informatique,https://www.freelance-informatique.fr/,Missions IT classiques,Moyenne-bonne (tag Airtable),a confirmer,a confirmer,
+Upwork,https://www.upwork.com/,International remote,Elevee (Make/Zapier/n8n/scraping/AI agents),Oui (remote),verifie,Concurrence prix internationale
+Fiverr,https://www.fiverr.com/,International remote,Elevee (automation/AI),Oui (remote),verifie,
+Toptal,https://www.toptal.com/freelance-jobs/developers/artificial-intelligence,Reseau selectif IA/dev,Bonne,Oui (remote),verifie,Tres selectif
+No-Code France (communaute + Slack),https://www.nocode-france.fr/,Communaute ~17000 membres,Elevee (canaux outils/regions/offres),Canaux regionaux,verifie,Communaute FR la plus pertinente pour sourcing clients
+Make Partners Directory,https://www.make.com/en/partners-directory,Annuaire partenaires (Silver/Gold/Platinum),Elevee,International,verifie,Devenir partenaire = visibilite
+Zapier Solution Partner,https://zapier.com/partnerdirectory,Annuaire partenaires,Elevee,International,verifie,
+n8n Expert Partners,https://experts.n8n.io,Annuaire experts (pilote ferme),Elevee,"UK/Irlande/Europe Nord/Am. Nord - FRANCE PAS INCLUSE",verifie,POINT CLE : pas encore ouvert a la France (affiliation dispo en attendant)

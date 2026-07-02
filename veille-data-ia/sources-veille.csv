@@ -1,0 +1,22 @@
+nom,url,categorie,signaux_a_surveiller,confiance
+Le Journal des Entreprises Bretagne,https://www.lejournaldesentreprises.com/bretagne,Presse eco B2B,"Levees de fonds, croissance externe, nominations, investissements, digitalisation",verifie
+JDE - rubrique levees de fonds,https://www.lejournaldesentreprises.com/thematiques-economiques/strategie/capital/levee-de-fonds,Presse eco (signal),Levees de fonds bretonnes,verifie
+AudeLor - revue de presse/Barographe,https://www.audelor.com/services-aux-entreprises/actu-des-entreprises-revue-de-presse-conjoncture-economique/,Agregateur eco local,"PRIORITE 1 zone Lorient/Morbihan : investissements, automatisation, recrutements locaux",verifie
+AudeLor - actualites,https://www.audelor.com/actualites/,Agence dev eco Lorient,"Implantations, parcs d'activite, etudes sectorielles, filieres naval/EMR/TIC/agromer",verifie
+Bretagne Economique (CCI),https://www.bretagne.cci.fr/soluccio-entreprises/bretagne-economique,Portail eco CCI,"Actu entreprises regionales, etudes, conjoncture",verifie
+Le Telegramme (economie),https://www.letelegramme.fr,Presse locale (paywall),Actu eco Lorient/Morbihan,a confirmer (URL rubrique non exposee)
+Ouest-France Entreprises,https://fr.linkedin.com/company/ouest-france-entreprises,Presse Grand Ouest,Actu entreprises Grand Ouest,a confirmer (portail web non confirme)
+CCI du Morbihan,https://www.morbihan.cci.fr,Chambre consulaire,"Diagnostics digitaux, entreprises en transformation numerique (prospects directs)",verifie
+CCI Bretagne - infos economiques,https://www.bretagne.cci.fr/publications/informations-economiques,Etudes regionales,"Barometres, etudes filieres (source 900 M€ levees 2025)",verifie
+Bretagne Developpement Innovation (BDI),https://www.bdi.fr/,Agence regionale innovation,"Appels a projets (Crisalide), structuration filieres, transformation eco",verifie
+Region Bretagne - aides,https://www.bretagne.bzh/aides/,Institutionnel (signal),"Pass Transitions numerique, INNO Expe Numerique, AAP filieres",verifie (1 fiche en 403)
+Bpifrance - appels a projets,https://www.bpifrance.fr/nos-appels-a-projets-concours,Institutionnel (signal),"AAP innovation Bretagne, FISO, Inno Avenir Filieres",verifie
+Les-aides.fr,https://les-aides.fr/,Agregateur aides,Appels a projets region Bretagne,verifie
+Le Poool / FT Rennes-St-Malo,https://lepoool.tech/,Ecosysteme tech,"Levees, acceleration, recrutements tech, ~250 startups",verifie
+FT Brest Bretagne Ouest,https://www.bresttechplus.fr/,Ecosysteme tech,"Digitalisation filieres traditionnelles, levees, emploi tech",verifie
+Pole Mer Bretagne Atlantique - opportunites,https://www.pole-mer-bretagne-atlantique.com/en/opportunites-app-ami,Cluster maritime,"AAP R&D, decarbonation maritime, drones marins, EMR",verifie
+Bretagne Pole Naval,https://www.bpn.bzh/,Cluster naval,"Commandes, sous-traitance, modernisation industrie 4.0 chantiers",verifie
+Pole Images & Reseaux,https://www.images-et-reseaux.com/,Pole numerique Grand Ouest,"AAP numerique/IA, projets IRT b-com",verifie
+Dataemploi France Travail Morbihan,https://dataemploi.francetravail.fr/emploi/panorama/DEP/56,Data emploi (proxy),Recrutement massif = signal croissance,verifie
+iD4Car,https://www.id4mobility.org/,Filiere mobilite Grand Ouest,AAP mobilite/automobile,a confirmer (URL propre a verifier)
+EMC2 (usine du futur),,Cluster industrie 4.0,Automatisation industrielle,a confirmer (URL non recuperee)

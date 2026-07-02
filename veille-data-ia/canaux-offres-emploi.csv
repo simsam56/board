@@ -1,0 +1,14 @@
+nom,url,type,filtre_geo,confiance,notes
+HelloWork,https://www.hellowork.com/fr-fr/emploi/metier_analyste-de-donnees-region_bretagne.html,Job board generaliste FR,Oui (region/ville/CP ex Lorient 56100),verifie,Le plus productif observe pour la Bretagne
+Indeed France,https://fr.indeed.com/q-data-l-morbihan-emplois.html,Agregateur,Oui (+ full remote),verifie,
+France Travail,https://candidat.francetravail.fr/offres/emploi/data-analyst/morbihan/s28m18d56,Service public,Oui (metier/ville/dept),verifie,"Morbihan 'data analyst' = 0 resultat le 2/07 ; elargir requetes (data/BI/reporting)"
+APEC,https://www.apec.fr/candidat/recherche-emploi.html,Cadres (junior Bac+5),Oui (lieu + full teletravail),a confirmer,Page listee non fetchee
+Welcome to the Jungle,https://www.welcometothejungle.com/fr/pages/emploi-data-scientist-rennes-35000,Job board tech/startups,Oui (rayon 20 km),verifie,
+Meteojob,https://www.meteojob.com/Lorient-(56)-Emploi-Data-Analyst,Job board,Oui (ville/contrat),a confirmer,Liste non fetchee
+RemoteFR,https://remotefr.com/competences/datascience,Offres 100% teletravail,Par competence,a confirmer,/competences/data renvoie 404 ; utiliser /datascience
+Le Poool (FT Rennes-St-Malo),https://lepoool.tech/,Animateur ecosysteme,Non (vivier employeurs),verifie,Dossiers '10 entreprises qui recrutent' = source de noms
+Les Pepites Tech (hub FT Rennes),https://lespepitestech.com/french-tech-hub/emploi/1265,Job board startups,Oui (categorie/contrat),verifie,0 offre le jour J - repasser plus tard
+CCI Bretagne (qui recrute),https://www.bretagne.cci.fr/actualite/qui-recrute-en-bretagne,Conjoncture/emploi,Non,a confirmer,
+Breizh-Tech.bzh,https://www.breizh-tech.bzh/,Panorama marche tech breton,Non (PAS un job board),verifie,Utile context/salaires seulement
+ADN Ouest,https://www.adnouest.org,Reseau numerique Bretagne/PdL,a confirmer,a confirmer,Verifier s'il heberge un flux d'offres data
+LinkedIn Jobs,https://fr.linkedin.com/jobs/data-scientist-emplois-rennes,Reseau pro,Oui (+ remote),introuvable via outil,Non fetchable (auth) - consulter connecte
